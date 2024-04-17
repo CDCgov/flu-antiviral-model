@@ -64,7 +64,7 @@ seek.care.upper <- get_risk_stratifications(pop = c(0.40, 0.40, 0.45, 0.55, 0.65
 # lo/hi refer to lower / upper limits of assumed distribution
 # different values in each vector c() are for the different age groups
 
-# Low risk people first
+# Low risk first
 pars.table.lr <- 
     data.frame(
         risk = "low",
@@ -94,8 +94,7 @@ pars.table.lr <-
         nai.compliance.hi = rep(0.6, n.ages)
     )
 
-# High risk people next - most parameters the same so copy low-risk
-# NB All adults 65+ are high-risk so those parameters stay the same
+# High risk next - most parameters the same so copy low-risk
 pars.table.hr <- pars.table.lr %>%
                     mutate(
                        risk = "high",
