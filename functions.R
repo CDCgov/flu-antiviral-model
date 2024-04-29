@@ -148,7 +148,10 @@ get_outcomes <- function(parameters) {
             hosp.comply.nai = hosp.risk * ( (1 - nai.effect.early) * (comply.nai.pos.early + comply.nai.neg.early + comply.nai.no.early) + (1 - nai.effect.late) * (comply.nai.pos.late + comply.nai.neg.late + comply.nai.no.late) ),
             
             # All hospitalizations
-            hosp.total = hosp.non.outpatient + hosp.non.prescribed.nai + hosp.non.comply.nai + hosp.comply.nai
+            hosp.total = hosp.non.outpatient + hosp.non.prescribed.nai + hosp.non.comply.nai + hosp.comply.nai,
+            
+            # Number of antiviral prescriptions filled -------------------
+            nai.total = nai.pos.early + nai.pos.late + nai.neg.early + nai.neg.late + nai.no.early + nai.no.late
         ) 
 }
 

@@ -17,6 +17,10 @@ cols <- c("springgreen3", "gold2", "orange2")
 cols_alt <- c("springgreen3", "lightskyblue1", "skyblue2", "dodgerblue3", "dodgerblue4")
 cols_risk <- c("gold2", "tomato3", "dodgerblue")
 
+# boxplot settings
+boxpt   <- 21
+boxsize <- 0.3
+
 ## Load model functions
 source("functions.R")
 ```
@@ -50,12 +54,12 @@ chr <- get_risk_stratifications(pop = 1/c(99.2, 497.4, 145.6, 57.5, 9.1),   # Da
                                 prop.high = high.risk)
  
 # Care-seeking lower bound
-seek.care.lower <- get_risk_stratifications(pop = c(0.25, 0.25, 0.30, 0.30, 0.35), # ONM
+seek.care.lower <- get_risk_stratifications(pop = c(0.25, 0.25, 0.35, 0.45, 0.45), # ONM
                                             rr =  rep(1.3, 5),        # Biggerstaff 2010       
                                             prop.high = high.risk) 
 
 # Care-seeking upper bound
-seek.care.upper <- get_risk_stratifications(pop = c(0.40, 0.40, 0.45, 0.55, 0.65), # ONM
+seek.care.upper <- get_risk_stratifications(pop = c(0.35, 0.35, 0.50, 0.55, 0.55), # ONM
                                             rr =  rep(1.3, 5),        # Biggerstaff 2010       
                                             prop.high = high.risk) 
 
@@ -218,11 +222,28 @@ out.baseline <- get_outcomes(pars) %>%
 out.baseline %>% group_by(sim, age, testing, prescribing, effectiveness) %>%
     summarize(hosp.total = sum(hosp.total)) %>%
     ggplot(aes(x = age, y = hosp.total, fill = effectiveness)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5) +
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+                 linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
-    get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
+    get_theme(txt = 11, legend.position = "top") + 
+    scale_y_log10(labels = comma) +
     scale_fill_manual(NULL, values = cols) +
     labs(x = "", y = "Total hospitalizations")
+```
+
+```{r, fig.height = 3, fig.width = 6}
+# all antivirals
+out.baseline %>% group_by(sim, testing, prescribing, effectiveness) %>%
+    summarize(nai.total = sum(nai.total), .groups = "drop") %>%
+    # choose one NAI effectiveness scenario (they're all the same)
+    filter(effectiveness == "high NAI effect") %>%
+    ggplot(aes(x = testing, y = nai.total, fill = prescribing)) + 
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+                 linewidth = boxsize, outlier.shape = boxpt) +
+    get_theme(txt = 8, legend.position = "top") + scale_y_continuous(labels = comma) +
+    scale_fill_manual(NULL, values = cols) +
+    labs(x = "", y = "Total antiviral prescriptions")
+
 #ggsave(here("figs", "res_absolute.png"), width = 8, height = 8)
 ```
 
@@ -260,9 +281,11 @@ change.worst %>% filter(risk == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
     ggplot(aes(x = age, y = change, fill = effectiveness)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5) +
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+                 linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
-    get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
+    get_theme(txt = 11, legend.position = "top") + 
+    scale_y_log10(labels = comma) +
     scale_fill_manual(NULL, values = cols) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
@@ -274,7 +297,8 @@ change.perc.worst %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     filter(effectiveness == "high NAI effect") %>%
     ggplot(aes(x = age, y = change, fill = risk)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5) +
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+                 linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
     scale_fill_manual("Risk", values = cols_risk) +
@@ -359,9 +383,11 @@ change.worst %>% filter(risk == "all") %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     filter(effectiveness == "high NAI effect") %>%
     ggplot(aes(x = age, y = change, fill = alternative)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4)) +
+    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+                 linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
-    get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
+    get_theme(txt = 11, legend.position = "top") + 
+    scale_y_log10(labels = comma) +
     scale_fill_manual(NULL, values = cols_alt) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
@@ -373,7 +399,8 @@ change.perc.worst %>% filter(alternative %in% c("baseline", "more everything")) 
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     filter(effectiveness == "high NAI effect") %>%
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4)) +
+    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+                 linewidth = boxsize, outlier.shape = boxpt) +
     geom_stripped_cols() +
     # create dummy legend for striped columns
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
@@ -382,7 +409,8 @@ change.perc.worst %>% filter(alternative %in% c("baseline", "more everything")) 
                        guide = guide_legend(override.aes = list(color = "black", linewidth = c(0, 0.1)))) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top", axis.text.x = element_text(hjust = -0.5)) + 
-    scale_y_continuous(labels = comma) + scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
+    scale_y_continuous(labels = comma) + 
+    scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
     scale_fill_manual("Risk", values = cols_risk) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
          title = "Partitioned by risk")
@@ -433,8 +461,10 @@ change.worst %>% filter(risk == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     ggplot(aes(x = age, y = change, fill = alternative)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4)) +
-    get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
+    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+                 linewidth = boxsize, outlier.shape = boxpt) +
+    get_theme(txt = 11, legend.position = "top") + 
+    scale_y_log10(labels = comma) +
     scale_fill_manual("Scenario", values = cols_alt) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
@@ -445,14 +475,16 @@ change.perc.worst %>% filter(alternative %in% c("baseline", "testing &\nprescrib
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4)) +
+    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+                 linewidth = boxsize, outlier.shape = boxpt) +
     geom_stripped_cols() +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha2")) +
     scale_alpha_manual("Scenario", values = c(0.15, 0), labels = c("baseline", "testing & prescribing"),
                        guide = guide_legend(override.aes = list(color = "black", linewidth = c(0, 0.1)))) +
     get_theme(txt = 11, legend.position = "top", axis.text.x = element_text(hjust = -0.5)) + 
-    scale_y_continuous(labels = comma) + scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
+    scale_y_continuous(labels = comma) + 
+    scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
     scale_fill_manual("Risk", values = cols_risk) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
          title = "Partitioned by risk")
@@ -501,15 +533,17 @@ change.worst %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.65, width = 0.4, position = position_dodge(0.4)) +
+    geom_boxplot(alpha = 0.65, width = 0.4, position = position_dodge(0.4),
+                 linewidth = boxsize, outlier.shape = boxpt) +
     geom_stripped_cols() +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha2")) +
     scale_alpha_manual("Scenario", values = c(0.15, 0), labels = c("baseline", "everything"),
                        guide = guide_legend(override.aes = list(color = "black", linewidth = c(0, 0.1)))) +
     get_theme(txt = 11, legend.position = "top") + 
-    scale_y_continuous(labels = comma) + scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
-    scale_fill_manual("Risk", values = cols_risk) +
+    scale_y_log10(labels = comma) + 
+    scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
+    scale_fill_manual("Risk", values = cols_risk) + 
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)")
 ggsave(here("figs", "res_all_num_risk.png"), width = 8, height = 5)
 
@@ -518,7 +552,8 @@ ggsave(here("figs", "res_all_num_risk.png"), width = 8, height = 5)
 change.perc.worst %>% 
     gather(scenario, change, contains("testing")) %>%
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.65, width = 0.4, position = position_dodge(0.4)) +
+    geom_boxplot(alpha = 0.65, width = 0.4, position = position_dodge(0.4),
+                 linewidth = boxsize, outlier.shape = boxpt) +
      geom_stripped_cols() +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha2")) +
