@@ -17,6 +17,10 @@ cols <- c("springgreen3", "gold2", "orange2")
 cols_alt <- c("springgreen3", "lightskyblue1", "skyblue2", "dodgerblue3", "dodgerblue4")
 cols_risk <- c("gold2", "tomato3", "dodgerblue")
 
+cols <- c("#aa4499","#999933", "#88ccee")
+cols_alt <- c("#ddcc77",  "#88ccee", "#44aa99","#117733", "#882255")
+cols_risk <- c( "#cc6677", "#332288", "#44aa99")
+
 # boxplot settings
 boxpt   <- 21
 boxsize <- 0.3
@@ -127,12 +131,12 @@ pars_long <- pars.range %>%
 # add better parameter names for plotting
 rename_pars(pars_long) %>%
     ggplot(aes(x = age, y = value, fill = risk)) + 
-    geom_violin(alpha = 0.25, position = position_dodge(width = 0.75)) + 
+    geom_violin(alpha = 0.5, position = position_dodge(width = 0.75)) + 
     geom_boxplot(width = 0.1, position = position_dodge(width = 0.75)) +
     scale_fill_manual("Risk", values = cols_risk[2:3]) + ylim(c(0, 1)) +
     facet_wrap(~ parname, ncol = 3) + get_theme(txt = 14, legend.position = c(0.1, 0.9)) +
     labs(x = "", y = "Sampled value")
-#ggsave(here("figs", "base_inputs.png"), width = 12, height = 6)
+ # ggsave(here("figs", "base_inputs.png"), width = 12, height = 6)
 
 pars_long %>% mutate(weighted.value = value * proportion) %>%
     select(-proportion, - population, - value) %>% spread(risk, weighted.value) %>%
@@ -223,13 +227,14 @@ out.baseline <- get_outcomes(pars) %>%
 out.baseline %>% group_by(sim, age, testing, prescribing, effectiveness) %>%
     summarize(hosp.total = sum(hosp.total)) %>%
     ggplot(aes(x = age, y = hosp.total, fill = effectiveness)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75,
                  linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) +
     scale_fill_manual(NULL, values = cols) +
     labs(x = "", y = "Total hospitalizations")
+ggsave(here("figs", "base_out.png"), width = 8, height = 8)
 ```
 
 ```{r, fig.height = 3, fig.width = 6}
@@ -239,7 +244,7 @@ out.baseline %>% group_by(sim, testing, prescribing, effectiveness) %>%
     # choose one NAI effectiveness scenario (they're all the same)
     filter(effectiveness == "high NAI effect") %>%
     ggplot(aes(x = testing, y = nai.total, fill = prescribing)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75,
                  linewidth = boxsize, outlier.shape = boxpt) +
     get_theme(txt = 8, legend.position = "top") + scale_y_continuous(labels = comma) +
     scale_fill_manual(NULL, values = cols) +
@@ -282,7 +287,7 @@ change.worst %>% filter(risk == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
     ggplot(aes(x = age, y = change, fill = effectiveness)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.5,
                  linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
@@ -290,7 +295,7 @@ change.worst %>% filter(risk == "all") %>%
     scale_fill_manual(NULL, values = cols) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
-#ggsave(here("figs", "res_worst_num_risk.png"), width = 8, height = 8)
+ggsave(here("figs", "res_worst_num_risk.png"), width = 8, height = 8)
 
 # Plot baseline compared to worst-case - % differences
 change.perc.worst %>%
@@ -298,14 +303,14 @@ change.perc.worst %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     filter(effectiveness == "high NAI effect") %>%
     ggplot(aes(x = age, y = change, fill = risk)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), alpha = 0.5,
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75,
                  linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
     scale_fill_manual("Risk", values = cols_risk) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
          title = "Partitioned by risk")
-#ggsave(here("figs", "res_worst_risk.png"), width = 8, height = 8)
+ggsave(here("figs", "res_worst_risk.png"), width = 8, height = 8)
 ```
 
 
@@ -352,13 +357,13 @@ pars_long <-
 # add better parameter names for plotting
 rename_pars(pars_long) %>%
     ggplot(aes(x = age, y = value, fill = scenario)) + 
-    geom_violin(alpha = 0.25, position = position_dodge(width = 0.75)) + 
-    geom_boxplot(alpha = 0.5, width = 0.1, position = position_dodge(width = 0.75)) +
+    geom_violin(alpha = 0.5, position = position_dodge(width = 0.75)) + 
+    geom_boxplot(alpha = 0.75, width = 0.1, position = position_dodge(width = 0.75)) +
     scale_fill_manual("Value", values = cols_alt, labels = c("baseline", "increased")) +
     ylim(c(0, 1)) +
     facet_grid(risk ~ parname) + get_theme(txt = 12) +
     labs(x = "", y = "Sampled value")
-#ggsave(here("figs", "ind_param.png"), width = 8, height = 6)
+# ggsave(here("figs", "ind_param.png"), width = 12, height = 6)
 ```
 
 Compare to worst-case scenario, assuming NAI effectiveness is at its highest value.
@@ -384,7 +389,7 @@ change.worst %>% filter(risk == "all") %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     filter(effectiveness == "high NAI effect") %>%
     ggplot(aes(x = age, y = change, fill = alternative)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75, 
                  linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
@@ -392,7 +397,7 @@ change.worst %>% filter(risk == "all") %>%
     scale_fill_manual(NULL, values = cols_alt) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
-#ggsave(here("figs", "res_individual_num.png"), width = 9, height = 8)
+ggsave(here("figs", "res_individual_num.png"), width = 9, height = 8)
 
 # Plot compared to worst case (% differences)
 change.perc.worst %>% filter(alternative %in% c("baseline", "more everything")) %>%
@@ -400,7 +405,7 @@ change.perc.worst %>% filter(alternative %in% c("baseline", "more everything")) 
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     filter(effectiveness == "high NAI effect") %>%
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75, 
                  linewidth = boxsize, outlier.shape = boxpt) +
     geom_stripped_cols() +
     # create dummy legend for striped columns
@@ -415,7 +420,7 @@ change.perc.worst %>% filter(alternative %in% c("baseline", "more everything")) 
     scale_fill_manual("Risk", values = cols_risk) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
          title = "Partitioned by risk")
-#ggsave(here("figs", "res_individual_risk.png"), width = 9, height = 8)
+ggsave(here("figs", "res_individual_risk.png"), width = 9, height = 8)
 ```
 
 
@@ -462,7 +467,7 @@ change.worst %>% filter(risk == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     ggplot(aes(x = age, y = change, fill = alternative)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.5, 
                  linewidth = boxsize, outlier.shape = boxpt) +
     get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) +
@@ -476,7 +481,7 @@ change.perc.worst %>% filter(alternative %in% c("baseline", "testing &\nprescrib
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.5, width = 0.4, position = position_dodge(0.4),
+    geom_boxplot( width = 0.4, position = position_dodge(0.4), #alpha = 0.5,
                  linewidth = boxsize, outlier.shape = boxpt) +
     geom_stripped_cols() +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
@@ -489,7 +494,7 @@ change.perc.worst %>% filter(alternative %in% c("baseline", "testing &\nprescrib
     scale_fill_manual("Risk", values = cols_risk) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
          title = "Partitioned by risk")
-#ggsave(here("figs", "res_clinical_risk.png"), width = 8, height = 5)
+ggsave(here("figs", "res_clinical_risk.png"), width = 8, height = 5)
 ```
 
 
@@ -534,7 +539,7 @@ change.worst %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.65, width = 0.4, position = position_dodge(0.4),
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.65, 
                  linewidth = boxsize, outlier.shape = boxpt) +
     geom_stripped_cols() +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
@@ -553,7 +558,7 @@ ggsave(here("figs", "res_all_num_risk.png"), width = 8, height = 5)
 change.perc.worst %>% 
     gather(scenario, change, contains("testing")) %>%
     ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(alpha = 0.65, width = 0.4, position = position_dodge(0.4),
+    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.65, 
                  linewidth = boxsize, outlier.shape = boxpt) +
      geom_stripped_cols() +
     geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
@@ -564,7 +569,7 @@ change.perc.worst %>%
     scale_y_continuous(labels = comma) + scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
     scale_fill_manual("Risk", values = cols_risk) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (%)")
-#ggsave(here("figs", "res_all_risk.png"), width = 8, height = 5)
+ggsave(here("figs", "res_all_risk.png"), width = 8, height = 5)
 ```
 
 
