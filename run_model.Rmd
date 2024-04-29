@@ -29,10 +29,11 @@ source("functions.R")
 ### Baseline parameters
 
 * Clinical attack rates come from the 2022/23 season burden estimates. 
-* Percent who are prescribed NAIs informed by VISION and literature review
+* Percent who are prescribed NAIs informed by VISION, VE Network, and literature review
 * Care-seeking comes from FNY/ONM and VE Network
 * Percent tested informed by VISION
 * Test sensitivity is informed by literature for molecular rapid tests.
+* Antiviral compliance is informed by ONM and RVTN
 
 
 ```{r}
