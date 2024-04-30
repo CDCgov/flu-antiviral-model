@@ -326,8 +326,8 @@ change.worst %>% filter(age != "all") %>%
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) +
-    scale_color_manual(NULL, values = cols_risk) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (#)")
+    scale_color_manual("Risk", values = cols_risk) +
+    labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (#)")
 ggsave(here("figs", "fig3.png"), width = 8, height = 7, dpi = 800)
 
 
@@ -358,7 +358,7 @@ change.worst %>% filter(risk == "all", age != "all") %>%
     get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) +
     scale_color_manual(NULL, values = cols) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
+    labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
 ggsave(here("figs", "res_worst_num_risk.png"), width = 8, height = 8)
 
@@ -373,7 +373,7 @@ change.perc.worst %>%
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
     scale_fill_manual("Risk", values = cols_risk) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
+    labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (%)",
          title = "Partitioned by risk")
 
 # Errorbar experimentation
@@ -390,7 +390,7 @@ change.perc.worst %>% filter(age != "all") %>%
     get_theme(txt = 11, legend.position = "top") + 
     scale_y_continuous(labels = comma) +
     scale_color_manual("Risk", values = cols_risk) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (%)")
+    labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (%)")
 ggsave(here("figs", "figS3.png"), width = 8, height = 7, dpi = 800)
 ```
 
