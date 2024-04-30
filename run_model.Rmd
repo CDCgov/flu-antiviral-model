@@ -261,7 +261,7 @@ out.baseline %>% group_by(sim, testing, prescribing, effectiveness) %>%
 
 ### Extreme scenarios vs baseline
 
-Plot the baseline scenarios above relative to a theoretical worst-case scenario in which antivirals are *not* used (can be modeled by setting NAI effectiveness to 0)
+Simulate the baseline scenarios above relative to a theoretical worst-case scenario in which antivirals are *not* used (can be modeled by setting NAI effectiveness to 0)
 
 ```{r}
 pars.worst <- pars %>% filter(scenario == "high testing, high prescribing, high NAI effect") %>%
@@ -279,15 +279,29 @@ out.extreme <- get_outcomes(pars.worst)
 tmp.extreme <- bind_rows(out.baseline, out.extreme) %>% 
                     select(sim, risk, age, scenario, hosp.total) %>%
                     spread(risk, hosp.total) %>% mutate(all = high + low) %>%
-                    gather(risk, hosp.total, high, low, all) %>% 
+                    gather(risk, hosp.total, high, low, all) %>% spread(age, hosp.total) %>%
+                    mutate(all = `0-4`+ `5-17`+ `18-49`+ `50-64`+ `65+`) %>%
+                    gather(age, hosp.total, `0-4`:all) %>%
                     spread(scenario, hosp.total) 
 
 # calculate changes relative to the extreme scenarios (absolute and percent)
 change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 
+# Numbers to quote in manuscript -----
+# total hospitalizations in worst case
+change.worst %>% filter(risk == "all", age == "all") %>% 
+    do(., get_summary(., var = "worst", groups = NULL))
+
+# total hospitalizations averted in each baseline scenario
+total_averted <- change.worst %>% filter(risk == "all", age == "all") %>%
+    gather(scenario, change, contains("testing")) %>%
+    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
+    do(., get_summary(., var = "change", groups = c("testing", "prescribing", "effectiveness")))
+
+
+# Plots ---------
 # Plot baseline compared to worst-case - absolute differences
-# partitioned by risk category
 change.worst %>% filter(risk == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
