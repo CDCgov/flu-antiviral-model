@@ -48,7 +48,10 @@ source("functions.R")
 ```{r}
 # Age groups 
 age.grps <- c("0-4", "5-17", "18-49", "50-64", "65+")
-n.ages <- length(age.grps)
+n.ages   <- length(age.grps)
+
+# labels for age groups when plotting (\u2265 = greater than or equal to)
+age_labels <- c(age.grps[1:4], '\u2265 65')
 
 # 2023 US census data 
 total.population <- 334914895
@@ -236,7 +239,7 @@ out.baseline %>% group_by(sim, age, testing, prescribing, effectiveness) %>%
                  linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
-    scale_y_log10(labels = comma) +
+    scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_fill_manual(NULL, values = cols) +
     labs(x = "", y = "Total hospitalizations")
 ggsave(here("figs", "base_out.png"), width = 8, height = 8)
@@ -325,14 +328,14 @@ change.worst %>% filter(age != "all") %>%
                   position = position_dodge(width = dodgewdth), width = barsize, linewidth = barwdth) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
-    scale_y_log10(labels = comma) +
+    scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual("Risk", values = cols_risk) +
     labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (#)")
 ggsave(here("figs", "fig3.png"), width = 8, height = 7, dpi = 800)
 
 
 # Plot baseline compared to worst-case - absolute differences
-change.worst %>% filter(risk == "all") %>%
+change.worst %>% filter(risk == "all", age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
     mutate(age = factor(age, levels = age.grps)) %>%
@@ -341,7 +344,7 @@ change.worst %>% filter(risk == "all") %>%
                  linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
-    scale_y_log10(labels = comma) +
+    scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_fill_manual(NULL, values = cols) +
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
@@ -358,14 +361,14 @@ change.worst %>% filter(risk == "all", age != "all") %>%
                   position = position_dodge(width = dodgewdth), width = barsize, linewidth = barwdth) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
-    scale_y_log10(labels = comma) +
+    scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual(NULL, values = cols) +
     labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (#)",
          title = "All individuals")
 ggsave(here("figs", "res_worst_num_risk.png"), width = 8, height = 8)
 
 # Plot baseline compared to worst-case - % differences
-change.perc.worst %>%
+change.perc.worst %>% filter(age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     filter(effectiveness == "high NAI effect") %>%
@@ -374,7 +377,8 @@ change.perc.worst %>%
     geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75,
                  linewidth = boxsize, outlier.shape = boxpt) +
     facet_grid(testing ~ prescribing) +
-    get_theme(txt = 11, legend.position = "top") + scale_y_continuous(labels = comma) +
+    get_theme(txt = 11, legend.position = "top") + 
+    scale_y_continuous(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_fill_manual("Risk", values = cols_risk) +
     labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (%)",
          title = "Partitioned by risk")
@@ -392,7 +396,7 @@ change.perc.worst %>% filter(age != "all") %>%
                   position = position_dodge(width = dodgewdth), width = barsize, linewidth = barwdth) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 11, legend.position = "top") + 
-    scale_y_continuous(labels = comma) +
+    scale_y_continuous(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual("Risk", values = cols_risk) +
     labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (%)")
 ggsave(here("figs", "figS3.png"), width = 8, height = 7, dpi = 800)
