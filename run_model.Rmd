@@ -45,8 +45,8 @@ source("functions.R")
 age.grps <- c("0-4", "5-17", "18-49", "50-64", "65+")
 n.ages <- length(age.grps)
 
-# 2022 US census data 
-total.population <- 336970670
+# 2023 US census data 
+total.population <- 334914895
 
 # Proportion high risk in each age group (currently from Zimmerman 2010)
 high.risk <- c(0.05, 0.10, 0.20, 0.35, 0.55)
