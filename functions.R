@@ -172,6 +172,23 @@ get_percent_burden <- function(out, ref.col = "increase", ref.value = 0) {
 }
 
 
+#' Summarize (mean and 95th percentile) function -------------------------------
+#' 
+#' @param dat data.frame
+#' @param var Character specifying variable to be summarized
+#' @param groups Character string specifying columns to group by
+#'
+#' @return
+#' @export
+#'
+#' @examples
+get_summary <- function(dat, var, groups, level = 0.95) {
+    dat %>% group_by(!!!syms(groups)) %>% 
+        summarize(mean = mean(get(var)), 
+                  lower = quantile(get(var), (1 - 0.95)/2), 
+                  upper = quantile(get(var), 1 - (1 - 0.95)/2), .groups = "drop")
+}
+
 
 #' Plotting function -----------------------------------------
 #' 
@@ -187,8 +204,11 @@ get_theme <- function(txt = 12, ...) {
                           axis.title = element_text(size = txt),
                           legend.text = element_text(size = txt),
                           legend.title = element_text(size = txt),
-                          strip.text = element_text(size = txt - 1),
+                          strip.text = element_text(size = txt - 1, color = "black"),
                           title = element_text(size = txt - 1),
+                          strip.background = element_rect(fill = "white", color = "black"),
+                          panel.grid.minor = element_blank(),
+                          panel.grid.major.x = element_blank(),
                           ...)
 }
 
