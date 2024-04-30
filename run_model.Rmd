@@ -304,9 +304,8 @@ total_averted <- change.worst %>% filter(risk == "all", age == "all") %>%
 total_averted %>% 
     mutate(effectiveness = gsub(effectiveness, pattern = " NAI effect", replacement = "")) %>%
     ggplot(aes(x = effectiveness, y = mean, color = effectiveness)) + 
-    geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
-    geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth), width = barsize - 0.2, linewidth = barwdth) +
+    geom_point(size = ptsize) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = barsize - 0.2, linewidth = barwdth) +
     facet_grid(testing ~ prescribing) +
     get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) +
@@ -319,6 +318,7 @@ change.worst %>% filter(age != "all") %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     filter(effectiveness == "high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "testing", "prescribing", "effectiveness"))) %>%
+    mutate(age = factor(age, levels = age.grps)) %>%
     ggplot(aes(x = age, y = mean, color = risk)) + 
     geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -335,6 +335,7 @@ ggsave(here("figs", "fig3.png"), width = 8, height = 7, dpi = 800)
 change.worst %>% filter(risk == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
+    mutate(age = factor(age, levels = age.grps)) %>%
     ggplot(aes(x = age, y = change, fill = effectiveness)) + 
     geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.5,
                  linewidth = boxsize, outlier.shape = boxpt) +
@@ -350,6 +351,7 @@ change.worst %>% filter(risk == "all", age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "testing", "prescribing", "effectiveness"))) %>%
+    mutate(age = factor(age, levels = age.grps)) %>%
     ggplot(aes(x = age, y = mean, color = effectiveness)) + 
     geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -367,6 +369,7 @@ change.perc.worst %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     filter(effectiveness == "high NAI effect") %>%
+    mutate(age = factor(age, levels = age.grps)) %>%
     ggplot(aes(x = age, y = change, fill = risk)) + 
     geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75,
                  linewidth = boxsize, outlier.shape = boxpt) +
@@ -382,6 +385,7 @@ change.perc.worst %>% filter(age != "all") %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
     filter(effectiveness == "high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "testing", "prescribing", "effectiveness"))) %>%
+    mutate(age = factor(age, levels = age.grps)) %>%
     ggplot(aes(x = age, y = mean, color = risk)) + 
     geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
