@@ -304,6 +304,12 @@ total_averted <- change.worst %>% filter(risk == "all", age == "all") %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     do(., get_summary(., var = "change", groups = c("testing", "prescribing", "effectiveness")))
 
+total_perc_averted <- change.perc.worst %>% filter(risk == "all", age == "all") %>%
+    gather(scenario, change, contains("testing")) %>%
+    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
+    do(., get_summary(., var = "change", groups = c("testing", "prescribing", "effectiveness")))
+
+
 total_averted %>% 
     mutate(effectiveness = gsub(effectiveness, pattern = " NAI effect", replacement = "")) %>%
     ggplot(aes(x = effectiveness, y = mean, color = effectiveness)) + 
