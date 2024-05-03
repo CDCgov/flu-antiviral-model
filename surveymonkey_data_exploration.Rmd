@@ -17,7 +17,7 @@ survey_monkey <- read.csv(here("data", "surveymonkey_sick_2022-08-01_2024-03-31.
 ```{r find flu data}
 
 #remove covid variables, try to select only relevant flu
-flu_sm <- survey_monkey %>% select(contains("flu"), contains("influenza"), contains("ST"), contains("age"), contains("date"), contains("professional"), contains("cold"), contains("testing"), contains("symptom"), contains("antiviral"), -contains("covid"),  -contains("c19"))
+flu_sm <- survey_monkey %>% select(contains("flu"), contains("influenza"), contains("ST"), contains("age"), contains("date"), contains("professional"), contains("cold"), contains("testing"), contains("symptom"), contains("condition"), contains("antiviral"), -contains("covid"),  -contains("c19"))
 
 #range(as.Date(flu_sm$date_created)) #dates ranged from 8/22 - 3/24
 
@@ -27,7 +27,7 @@ flu <- flu_sm %>%
          !(flu_test_result == 4 & is.na(received_diagnosis_mc_influenza) & is.na(prescription_received_mc_flu_antiviral))) %>% 
   mutate(flu_dx_or_t = case_when(flu_test_result == 1 ~ 1, 
                                  received_diagnosis_mc_influenza == 1 ~ 1, 
-                                 TRUE ~ 0))
+                                 TRUE ~ 0)) # I debated filtering here for +dx or +test, but some people were waiting on a test, others tested negative but still had +rx
 
 nrow(filter(flu_sm, flu_test_result == 1 | received_diagnosis_mc_influenza == 1))/nrow(flu_sm) #1.7% of people in this dataset had a flu dx or + test
 nrow(filter(flu, flu_dx_or_t != 1)) #814 people received an antiviral rx w/o +flu dx or +test
@@ -36,3 +36,26 @@ nrow(filter(flu, attempt_fill_prescription_influenza == 1))/nrow(filter(flu, pre
 nrow(filter(flu, able_fill_prescription_influenza == 1))/nrow(filter(flu, attempt_fill_prescription_influenza == 1)) #79% of those who attempted to fill rx were able to get it filled
 ```
 
+
+```{r risk conditions}
+
+# I debated starting with the full dataset again, but other than a fludx or test 
+
+flu_conditions <- flu %>% mutate(any_condition = case_when(condition_mc_asthma == 1 ~ 1,
+                                                           condition_mc_cancer_last_year == 1 ~ 1, 
+                                                           condition_mc_diabetes == 1 ~ 1,
+                                                           condition_mc_heart_disease == 1 ~ 1,
+                                                           condition_mc_immunosuppressive == 1 ~ 1, 
+                                                           condition_mc_kidney_disease == 1 ~ 1, 
+                                                           condition_mc_lung_disease  == 1 ~ 1,
+                                                           condition_mc_obesity == 1 ~ 1)) %>% filter(any_condition == 1 | age >=65)
+
+nrow(filter(flu_conditions, flu_dx_or_t == 1)) #1047 people are high risk (including age >=65), #735 had a flu dx or +test
+nrow(filter(flu_conditions, prescription_received_mc_flu_antiviral == 1))/nrow(filter(flu_conditions, flu_dx_or_t == 1)) # 64% w/+dx or +test received antiviral 
+nrow(filter(flu_conditions, attempt_fill_prescription_influenza == 1))/nrow(filter(flu_conditions, prescription_received_mc_flu_antiviral == 1))  #57% attempted to fill rx
+nrow(filter(flu_conditions, able_fill_prescription_influenza == 1))/nrow(filter(flu_conditions, attempt_fill_prescription_influenza == 1)) #79% of those who attempted to fill rx were able to get it filled
+
+
+
+
+```
