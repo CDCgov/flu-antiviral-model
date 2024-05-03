@@ -17,14 +17,29 @@ survey_monkey <- read.csv(here("data", "surveymonkey_sick_2022-08-01_2024-03-31.
 ```{r find flu data}
 
 #remove covid variables, try to select only relevant flu
-flu_sm <- survey_monkey %>% select(contains("flu"), contains("influenza"), contains("ST"), contains("age"), contains("date"), contains("professional"), contains("cold"), contains("testing"), contains("symptom"), contains("condition"), contains("antiviral"), -contains("covid"),  -contains("c19"))
+flu_sm <- survey_monkey %>% 
+  select(contains("flu"), #tbh I have no idea if you can just use one contain and c() all of these words in there
+         contains("influenza"), 
+         contains("ST"), 
+         contains("age"), 
+         contains("date"), 
+         contains("professional"), 
+         contains("cold"), 
+         contains("testing"), 
+         contains("symptom"), 
+         contains("condition"), 
+         contains("antiviral"), 
+         -contains("covid"),  
+         -contains("c19"))
 
 #range(as.Date(flu_sm$date_created)) #dates ranged from 8/22 - 3/24
 
 #filter out only those who had a flu test or diagnosis or flu antiviral prescription, and did not have "no answer" for tested for flu with na for flu diagnosis and na for prescription received 
 flu <- flu_sm %>% 
-  filter(!is.na(flu_test_result) | !is.na(received_diagnosis_mc_influenza), flu_test_result != 2 | received_diagnosis_mc_influenza != 0 | prescription_received_mc_flu_antiviral!= 0, 
-         !(flu_test_result == 4 & is.na(received_diagnosis_mc_influenza) & is.na(prescription_received_mc_flu_antiviral))) %>% 
+  filter(!is.na(flu_test_result) | !is.na(received_diagnosis_mc_influenza), 
+         flu_test_result != 2 | received_diagnosis_mc_influenza != 0 | prescription_received_mc_flu_antiviral!= 0, 
+         !(flu_test_result == 4 & is.na(received_diagnosis_mc_influenza) & is.na(prescription_received_mc_flu_antiviral)), 
+         !(flu_test_result == 0 & received_diagnosis_mc_influenza == 0 & prescription_received_mc_flu_antiviral == 0)) %>% 
   mutate(flu_dx_or_t = case_when(flu_test_result == 1 ~ 1, 
                                  received_diagnosis_mc_influenza == 1 ~ 1, 
                                  TRUE ~ 0)) # I debated filtering here for +dx or +test, but some people were waiting on a test, others tested negative but still had +rx
