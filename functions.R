@@ -243,7 +243,7 @@ rename_pars <- function(dat, reorder = TRUE) {
                                     prescribed.nai.neg.early = "Prescribed NAIs (< 2d, no pos test)", 
                                     prescribed.nai.neg.late  = "Prescribed NAIs (> 2d, no pos test)", 
                                     
-                                    nai.compliance = "Comply with NAIs", 
+                                    nai.compliance = "Full compliance", 
                                     nai.effect.early = "NAI effect (< 2d)", 
                                     nai.effect.late = "NAI effect (> 2d)"
                                     ) )
@@ -254,7 +254,7 @@ rename_pars <- function(dat, reorder = TRUE) {
                                                               "Positive test (< 2d)", "Positive test (> 2d)",
                                                               "Prescribed NAIs (< 2d, pos test)", "Prescribed NAIs (> 2d, pos test)",
                                                               "Prescribed NAIs (< 2d, no pos test)", "Prescribed NAIs (> 2d, no pos test)", 
-                                                              "Comply with NAIs",  "NAI effect (< 2d)", "NAI effect (> 2d)"))
+                                                              "Full compliance",  "NAI effect (< 2d)", "NAI effect (> 2d)"))
     return(dat)
 }
 
