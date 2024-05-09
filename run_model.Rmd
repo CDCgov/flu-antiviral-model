@@ -15,6 +15,7 @@ nsim <- 1000
 
 cols <- c("#aa4499","#999933", "#88ccee")
 cols_alt <- c("#ddcc77",  "#88ccee", "#44aa99","#117733", "#882255")
+cols_alt2 <- c("#ddcc77",  "#88ccee", "#44aa99","#117733",  "#cc6677", "#882255", "#332288")
 cols_risk <- c( "#cc6677", "#332288", "#44aa99")
 
 # geom settings
@@ -385,7 +386,6 @@ ggsave(here("figs", "figS4.png"), width = 8, height = 7, dpi = 800)
 ```
 
 
-
 ### Alternative scenarios: increased individual-level parameters
 
 Increase parameters that represent actions individuals could perform differently
@@ -395,19 +395,21 @@ Increase parameters that represent actions individuals could perform differently
 * Increased antiviral compliance 
 
 ```{r}
+tmp.pars <- pars %>% filter(scenario == "high testing, high prescribing, high NAI effect") 
+
 # alter input parameters: assume increase of 50% for each
-pars.alt.cs1 <- pars %>% mutate(seek.care = seek.care * 1.5)
-pars.alt.cs2 <- pars %>% mutate(seek.care.early = seek.care.early * 1.5)
-pars.alt.cs3 <- pars %>% mutate(nai.compliance = nai.compliance * 1.5)
-pars.alt.cs4 <- pars %>% mutate(seek.care = seek.care * 1.5, 
+pars.alt.cs1 <- tmp.pars %>% mutate(seek.care = seek.care * 1.5)
+pars.alt.cs2 <- tmp.pars %>% mutate(seek.care.early = seek.care.early * 1.5)
+pars.alt.cs3 <- tmp.pars %>% mutate(nai.compliance = nai.compliance * 1.5)
+pars.alt.cs4 <- tmp.pars %>% mutate(seek.care = seek.care * 1.5, 
                                 seek.care.early = seek.care.early * 1.5, 
                                 nai.compliance = nai.compliance * 1.5)
 
 # join all new scenarios together
-pars.alt.cs <- bind_rows(pars, pars.alt.cs1, pars.alt.cs2, pars.alt.cs3, pars.alt.cs4) %>% 
+pars.alt.cs <- bind_rows(tmp.pars, pars.alt.cs1, pars.alt.cs2, pars.alt.cs3, pars.alt.cs4) %>% 
                 mutate(alternative = rep(c("baseline", "more care-seeking", 
                                            "more early-care-seeking", "more compliance",
-                                           "more everything"), each = nrow(pars))) %>%
+                                           "more everything"), each = nrow(tmp.pars))) %>%
     # make sure new inputs don't exceed 1
     mutate(across(c(seek.care, seek.care.early, nai.compliance), function(x) pmin(x, 1)))
 
@@ -460,8 +462,7 @@ change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function
 # Plot compared to worst case (absolute differences)
 p_alt_num <- 
     change.worst %>% 
-    gather(scenario, change, contains("testing")) %>%
-    filter(scenario == "high testing, high prescribing, high NAI effect") %>%
+    rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
@@ -475,8 +476,7 @@ p_alt_num <-
 # Plot compared to worst case (% differences)
 p_alt_perc <- 
     change.perc.worst %>% 
-    gather(scenario, change, contains("testing")) %>%
-    filter(scenario == "high testing, high prescribing, high NAI effect") %>%
+    rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
@@ -590,13 +590,12 @@ n <- length(unique(pars.all$alternative))
 tmp.extreme <- out.extreme %>% uncount(n) %>% 
     mutate(alternative = rep(unique(pars.all$alternative), times = nrow(out.extreme))) %>%
     bind_rows(., out.all) %>% select(sim, risk, age, scenario, alternative, hosp.total) %>%
-    spread(scenario, hosp.total) 
-
-tmp.extreme <- out.extreme %>% uncount(n) %>% 
-    mutate(alternative = rep(unique(pars.all$alternative), times = nrow(out.extreme))) %>%
-    bind_rows(., out.all) %>% select(sim, risk, age, scenario, alternative, hosp.total) %>%
     spread(risk, hosp.total) %>% mutate(all = high + low) %>%
-    gather(risk, hosp.total, high, low, all) %>% spread(scenario, hosp.total) 
+    gather(risk, hosp.total, high, low, all) %>% 
+    spread(age, hosp.total) %>%
+    mutate(all = `0-4`+ `5-17`+ `18-49`+ `50-64`+ `65+`) %>%
+    gather(age, hosp.total, `0-4`:all) %>%
+    spread(scenario, hosp.total) 
 
 change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
@@ -605,7 +604,7 @@ change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function
 ```{r, fig.height = 8, fig.width = 10}
 # Compare worst-case to baseline scenarios (absolute difference)
 p_alt3_num <- 
-    change.worst %>% 
+    change.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
@@ -618,7 +617,7 @@ p_alt3_num <-
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)")
 
 # Compare worst-case to baseline scenarios (% difference)
-p_alt3_perc <- change.perc.worst %>% 
+p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
@@ -634,4 +633,28 @@ p_alt3_num / p_alt3_perc + plot_annotation(tag_levels = 'A') + plot_layout(heigh
 ggsave(here("figs", "figS6.png"), width = 8, height = 7.5)
 ```
 
+## Everything single and then combined
+
+```{r, include = FALSE}
+tmp.pars <- pars %>% filter(scenario == "high testing, high prescribing, high NAI effect") 
+
+pars.alt1 <- tmp.pars %>% mutate(prescribed.nai.pos.early = ifelse(risk == "high", 0.75, 0.37), 
+                                 prescribed.nai.pos.late  = ifelse(risk == "high", 0.30, 0.15))
+pars.alt2 <- tmp.pars %>% mutate(perc.tested.early = 0.75, perc.tested.late = 0.15)
+pars.alt3 <- tmp.pars %>% mutate(prescribed.nai.pos.early = ifelse(risk == "high", 0.75, 0.37), 
+                                 prescribed.nai.pos.late  = ifelse(risk == "high", 0.30, 0.15),
+                                 perc.tested.early = 0.75, perc.tested.late = 0.15)
+
+pars.alt <- bind_rows(tmp.pars, pars.alt1, pars.alt2, 
+                      pars.alt.cs1, pars.alt.cs2, pars.alt.cs3, 
+                      pars.all) %>% 
+                mutate(alternative = rep(c("baseline", 
+                                           "prescribing",
+                                           "testing",
+                                           "care-seeking", 
+                                           "early-care-seeking", 
+                                           "compliance", "all parameters"), each = nrow(tmp.pars))) %>%
+    # make sure new inputs don't exceed 1
+    mutate(across(c(seek.care, seek.care.early, nai.compliance), function(x) pmin(x, 1)))
+```
 
