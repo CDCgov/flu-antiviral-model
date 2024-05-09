@@ -225,8 +225,6 @@ pars.high <- pars.range %>% filter(risk == "high") %>% expand_grid(., scenario.g
 pars <- rbind(pars.low, pars.high) 
 ```
 
-### Outcomes at baseline
-
 ```{r, fig.width = 10, fig.height = 6}
 out.baseline <- get_outcomes(pars) %>% 
                     mutate(scenario.all = scenario) %>%
@@ -246,7 +244,7 @@ pars.worst <- pars %>% filter(scenario == "high testing, high prescribing, high 
                        scenario = "worst")  
 ```
 
-```{r, fig.height = 8}
+```{r}
 # simulate extreme scenarios
 out.extreme <- get_outcomes(pars.worst) 
 
@@ -266,11 +264,13 @@ change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function
 # Numbers to quote in manuscript -----
 # total hospitalizations in worst case
 change.worst %>% filter(risk == "all", age == "all") %>% do(., get_summary(., var = "worst", groups = NULL))
+```
 
+Plots and results for main text
 
-# Plots ---------
-
+```{r, fig.height = 8}
 # Total hospitalizations averted and number needed to treat --------
+
 total_averted <- change.worst %>% filter(risk == "all", age == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
@@ -315,12 +315,13 @@ p_nnt <- change.worst %>% filter(risk == "all", age == "all") %>%
     get_theme(txt = 11) + 
     scale_y_continuous(labels = comma) +
     scale_color_manual(guide = "none", values = cols) +
-    labs(x = "Antiviral effectiveness", y = "Number needed to treat")
+    labs(x = "Antiviral effectiveness", y = "Number of prescriptions per averted hospitalization")
 
 p_total / p_nnt + plot_annotation(tag_levels = 'A')
 ggsave(here("figs", "figS2.png"), width = 8, height = 10, dpi = 800)
 
 # Partitioned by age and risk group ---------------
+
 change.worst %>% filter(age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
@@ -354,11 +355,33 @@ change.perc.worst %>% filter(age != "all") %>%
     scale_color_manual("Risk", values = cols_risk) +
     labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (%)")
 ggsave(here("figs", "figS3.png"), width = 8, height = 7, dpi = 800)
-```
 
+# NNT
+nai.used.age.risk <- out.baseline %>% 
+    select(sim, risk, age, scenario, nai.total) %>% 
+    spread(risk, nai.total) %>% mutate(all = high + low) %>%
+    gather(risk, nai.total, high, low, all) %>%
+    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ")  %>%
+    group_by(sim, age, risk, testing, prescribing, effectiveness) %>%
+    summarize(nai.total = sum(nai.total), .groups = "drop") 
 
-```{r, fig.height = 3, fig.width = 6}
-
+change.worst %>% filter(age != "all") %>%
+    gather(scenario, change, contains("testing")) %>%
+    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
+    left_join(nai.used.age.risk) %>%
+    filter(effectiveness == "high NAI effect") %>%
+    mutate(nnt = nai.total/change) %>%
+    do(., get_summary(., var = "nnt", groups = c("risk", "age", "testing", "prescribing", "effectiveness"))) %>%
+    ggplot(aes(x = age, y = mean, color = risk)) + 
+    geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth), width = barsize, linewidth = barwdth) +
+    facet_grid(testing ~ prescribing) +
+    get_theme(txt = 11, legend.position = "top") + 
+    scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
+    scale_color_manual("Risk", values = cols_risk) +
+    labs(x = "Age (years)", y = "Number of prescriptions per averted hospitalization")
+ggsave(here("figs", "figS4.png"), width = 8, height = 7, dpi = 800)
 ```
 
 
@@ -383,7 +406,7 @@ pars.alt.cs4 <- pars %>% mutate(seek.care = seek.care * 1.5,
 # join all new scenarios together
 pars.alt.cs <- bind_rows(pars, pars.alt.cs1, pars.alt.cs2, pars.alt.cs3, pars.alt.cs4) %>% 
                 mutate(alternative = rep(c("baseline", "more care-seeking", 
-                                           "more early-care-seeking", "more AV compliance",
+                                           "more early-care-seeking", "more compliance",
                                            "more everything"), each = nrow(pars))) %>%
     # make sure new inputs don't exceed 1
     mutate(across(c(seek.care, seek.care.early, nai.compliance), function(x) pmin(x, 1)))
@@ -400,7 +423,7 @@ pars_long <-
     gather(param, value, seek.care, seek.care.early, nai.compliance) %>%
     filter( alternative == "baseline" | (param == "seek.care" & alternative ==  "more care-seeking") | 
             (param == "seek.care.early" & alternative ==  "more early-care-seeking") | 
-                (param == "nai.compliance" & alternative ==  "more AV compliance")) %>%
+                (param == "nai.compliance" & alternative ==  "more compliance")) %>%
     mutate(scenario = ifelse(alternative == "baseline", alternative, "50% increase"))
 
 # add better parameter names for plotting
@@ -418,7 +441,7 @@ ggsave(here("figs", "figS1.png"), width = 8, height = 6)
 
 Compare to worst-case scenario, assuming NAI effectiveness is at its highest value.
 
-```{r, fig.width = 10, fig.height = 8}
+```{r}
 n <- length(unique(pars.alt.cs$alternative))
 
 # join output with output for extreme scenarios
@@ -431,46 +454,41 @@ tmp.extreme <- out.extreme %>% uncount(n) %>%
 # calculate change relative to extreme scenarios
 change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
+```
 
+```{r, fig.width = 10, fig.height = 8}
 # Plot compared to worst case (absolute differences)
-# For simplicity, only consider sims for highest NAI effectiveness 
-change.worst %>% filter(risk == "all") %>%
+p_alt_num <- 
+    change.worst %>% 
     gather(scenario, change, contains("testing")) %>%
-    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
-    filter(effectiveness == "high NAI effect") %>%
-    ggplot(aes(x = age, y = change, fill = alternative)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75, 
-                 linewidth = boxsize, outlier.shape = boxpt) +
-    facet_grid(testing ~ prescribing) +
-    get_theme(txt = 11, legend.position = "top") + 
+    filter(scenario == "high testing, high prescribing, high NAI effect") %>%
+    do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) +
-    scale_fill_manual(NULL, values = cols_alt) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
-         title = "All individuals")
-ggsave(here("figs", "res_individual_num.png"), width = 9, height = 8)
+    scale_color_manual(NULL, values = cols_alt) +
+    labs(x = "Risk stratification", y = "Averted hospitalizations relative to worst-case (#)")
 
 # Plot compared to worst case (% differences)
-change.perc.worst %>% filter(alternative %in% c("baseline", "more everything")) %>%
+p_alt_perc <- 
+    change.perc.worst %>% 
     gather(scenario, change, contains("testing")) %>%
-    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
-    filter(effectiveness == "high NAI effect") %>%
-    ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.75, 
-                 linewidth = boxsize, outlier.shape = boxpt) +
-    geom_stripped_cols() +
-    # create dummy legend for striped columns
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha2")) +
-    scale_alpha_manual("Scenario", values = c(0.15, 0), labels = c("baseline", "everything"),
-                       guide = guide_legend(override.aes = list(color = "black", linewidth = c(0, 0.1)))) +
-    facet_grid(testing ~ prescribing) +
-    get_theme(txt = 11, legend.position = "top", axis.text.x = element_text(hjust = -0.5)) + 
+    filter(scenario == "high testing, high prescribing, high NAI effect") %>%
+    do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
-    scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
-    scale_fill_manual("Risk", values = cols_risk) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
-         title = "Partitioned by risk")
-ggsave(here("figs", "res_individual_risk.png"), width = 9, height = 8)
+    scale_color_manual(guide = "none", values = cols_alt) +
+    labs(x = "Risk stratification", y = "Averted hospitalizations relative to worst-case (%)")
+
+p_alt_num / p_alt_perc + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9))
+ggsave(here("figs", "fig4.png"), width = 8, height = 7.5)
 ```
 
 
@@ -493,14 +511,14 @@ pars.alt <- bind_rows(tmp.pars, pars.alt1, pars.alt2, pars.alt3) %>%
                 mutate(alternative = rep(c("baseline", 
                                            "prescribing",
                                            "testing",
-                                           "testing &\nprescribing"), each = nrow(tmp.pars)))
+                                           "testing & prescribing"), each = nrow(tmp.pars)))
 
 out.alt <- get_outcomes(pars.alt) 
 ```
 
 Compare to best and worst-case scenarios, assuming NAI effectiveness is at its highest value.
 
-```{r, fig.height = 4, fig.width = 10}
+```{r}
 n <- length(unique(pars.alt$alternative))
 
 tmp.extreme <- out.extreme %>% uncount(n) %>% 
@@ -511,46 +529,45 @@ tmp.extreme <- out.extreme %>% uncount(n) %>%
 
 change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
+```
 
+```{r, fig.height = 8, fig.width = 10}
 # Compare worst-case to baseline scenarios (absolute difference)
-change.worst %>% filter(risk == "all") %>%
-    gather(scenario, change, contains("testing")) %>%
-    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
-    ggplot(aes(x = age, y = change, fill = alternative)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.5, 
-                 linewidth = boxsize, outlier.shape = boxpt) +
-    get_theme(txt = 11, legend.position = "top") + 
+p_alt2_num <- 
+    change.worst %>% 
+    rename(change = "high testing, high prescribing, high NAI effect") %>%
+    do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) +
-    scale_fill_manual("Scenario", values = cols_alt) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (#)",
-         title = "All individuals")
-ggsave(here("figs", "res_clinical_num_risk.png"), width = 8, height = 5)
+    scale_color_manual("Scenario", values = cols_alt) +
+    labs(x = "", y = "Averted hospitalizations relative to worst-case (#)")
 
 # Compare worst-case to baseline scenarios (% difference)
-change.perc.worst %>% filter(alternative %in% c("baseline", "testing &\nprescribing")) %>%
-    gather(scenario, change, contains("testing")) %>%
-    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
-    ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot( width = 0.4, position = position_dodge(0.4), #alpha = 0.5,
-                 linewidth = boxsize, outlier.shape = boxpt) +
-    geom_stripped_cols() +
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha2")) +
-    scale_alpha_manual("Scenario", values = c(0.15, 0), labels = c("baseline", "testing & prescribing"),
-                       guide = guide_legend(override.aes = list(color = "black", linewidth = c(0, 0.1)))) +
-    get_theme(txt = 11, legend.position = "top", axis.text.x = element_text(hjust = -0.5)) + 
+p_alt2_perc <- 
+    change.perc.worst %>% 
+    rename(change = "high testing, high prescribing, high NAI effect") %>%
+    do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
-    scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
-    scale_fill_manual("Risk", values = cols_risk) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (%)",
-         title = "Partitioned by risk")
-ggsave(here("figs", "res_clinical_risk.png"), width = 8, height = 5)
+    scale_color_manual(guide = "none", values = cols_alt) +
+    labs(x = "", y = "Averted hospitalizations relative to worst-case (%)")
+
+p_alt2_num / p_alt2_perc + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9))
+ggsave(here("figs", "figS5.png"), width = 8, height = 7.5)
 ```
 
 
 ### Alternative scenarios: everything
 
-```{r, fig.height = 4, fig.width = 10}
+```{r}
 pars0 <- pars %>% filter(scenario == "high testing, high prescribing, high NAI effect") 
 
 pars.all <- pars0 %>% mutate(prescribed.nai.pos.early = ifelse(risk == "high", 0.75, 0.37), 
@@ -583,43 +600,38 @@ tmp.extreme <- out.extreme %>% uncount(n) %>%
 
 change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
+```
 
+```{r, fig.height = 8, fig.width = 10}
 # Compare worst-case to baseline scenarios (absolute difference)
-change.worst %>% 
-    gather(scenario, change, contains("testing")) %>%
-    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>% 
-    ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.65, 
-                 linewidth = boxsize, outlier.shape = boxpt) +
-    geom_stripped_cols() +
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha2")) +
-    scale_alpha_manual("Scenario", values = c(0.15, 0), labels = c("baseline", "everything"),
-                       guide = guide_legend(override.aes = list(color = "black", linewidth = c(0, 0.1)))) +
-    get_theme(txt = 11, legend.position = "top") + 
+p_alt3_num <- 
+    change.worst %>% 
+    rename(change = "high testing, high prescribing, high NAI effect") %>%
+    do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) + 
-    scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
-    scale_fill_manual("Risk", values = cols_risk) + 
+    scale_color_manual("Scenario", values = cols_alt[c(1, 5)]) + 
     labs(x = "", y = "Averted hospitalizations relative to worst-case (#)")
-ggsave(here("figs", "res_all_num_risk.png"), width = 8, height = 5)
-
 
 # Compare worst-case to baseline scenarios (% difference)
-change.perc.worst %>% 
-    gather(scenario, change, contains("testing")) %>%
-    ggplot(aes(x = interaction(alternative, age), y = change, fill = risk)) + 
-    geom_boxplot(width = 0.4, position = position_dodge(0.4), #alpha = 0.65, 
-                 linewidth = boxsize, outlier.shape = boxpt) +
-     geom_stripped_cols() +
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha1")) +
-    geom_rect(aes(xmin = 0, xmax = 0, ymin = 0, ymax = 0, alpha = "alpha2")) +
-    scale_alpha_manual("Scenario", values = c(0.15, 0), labels = c("baseline", "everything"),
-                       guide = guide_legend(override.aes = list(color = "black", linewidth = c(0, 0.1)))) +
-    get_theme(txt = 11, legend.position = "top") + 
-    scale_y_continuous(labels = comma) + scale_x_discrete(breaks = paste0("baseline.", age.grps), labels = age.grps) +
-    scale_fill_manual("Risk", values = cols_risk) +
+p_alt3_perc <- change.perc.worst %>% 
+    rename(change = "high testing, high prescribing, high NAI effect") %>%
+    do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9) + 
+    scale_y_continuous(labels = comma) + 
+    scale_color_manual(guide = "none", values = cols_alt[c(1, 5)]) + 
     labs(x = "", y = "Averted hospitalizations relative to worst-case (%)")
-ggsave(here("figs", "res_all_risk.png"), width = 8, height = 5)
+
+p_alt3_num / p_alt3_perc + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9))
+ggsave(here("figs", "figS6.png"), width = 8, height = 7.5)
 ```
 
 
