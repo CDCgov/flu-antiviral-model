@@ -233,22 +233,6 @@ out.baseline <- get_outcomes(pars) %>%
                     separate(scenario.all, c("testing", "prescribing", "effectiveness"), ", ") 
 ```
 
-```{r, fig.height = 3, fig.width = 6}
-# optional figure showing estimated # antivirals used
-out.baseline %>% group_by(sim, testing, prescribing, effectiveness) %>%
-    summarize(nai.total = sum(nai.total), .groups = "drop") %>%
-    # choose one effectiveness scenario (they're all the same)
-    filter(effectiveness == "high NAI effect") %>%
-    do(., get_summary(., var = "nai.total", groups = c("testing", "prescribing"))) %>%
-    ggplot(aes(x = testing, y = mean, color = prescribing)) + 
-    geom_point(size = ptsize, position = position_dodge(0.4)) +
-    geom_errorbar(aes(ymin = lower, ymax = upper), width = barwdth/3, position = position_dodge(0.4), #alpha = 0.75,
-                 linewidth = barsize) +
-    get_theme(txt = 8, legend.position = "top") + scale_y_continuous(labels = comma) +
-    scale_color_manual(NULL, values = cols) +
-    labs(x = "", y = "Total antiviral prescriptions")
-```
-
 
 ### Extreme scenarios vs baseline
 
@@ -285,7 +269,8 @@ change.worst %>% filter(risk == "all", age == "all") %>% do(., get_summary(., va
 
 
 # Plots ---------
-# total hospitalizations averted in each baseline scenario
+
+# Total hospitalizations averted and number needed to treat --------
 total_averted <- change.worst %>% filter(risk == "all", age == "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
@@ -296,18 +281,46 @@ total_perc_averted <- change.perc.worst %>% filter(risk == "all", age == "all") 
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     do(., get_summary(., var = "change", groups = c("testing", "prescribing", "effectiveness")))
 
-total_averted %>% 
+nai.used <- out.baseline %>% group_by(sim, testing, prescribing, effectiveness) %>%
+    summarize(nai.total = sum(nai.total), .groups = "drop") 
+
+# To quote total antivirals used in main text, choose one effectiveness scenario (they're all the same)
+nai.used %>% filter(effectiveness == "high NAI effect") %>%
+    do(., get_summary(., var = "nai.total", groups = c("testing", "prescribing"))) 
+
+# plot total averted
+p_total <- total_averted %>% 
     mutate(effectiveness = gsub(effectiveness, pattern = " NAI effect", replacement = "")) %>%
     ggplot(aes(x = effectiveness, y = mean, color = effectiveness)) + 
     geom_point(size = ptsize) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), width = barsize - 0.2, linewidth = barwdth) +
     facet_grid(testing ~ prescribing) +
-    get_theme(txt = 9, legend.position = "top") + 
-    scale_y_log10(labels = comma) +
+    get_theme(txt =11) + 
+    scale_y_continuous(labels = comma) +
     scale_color_manual(guide = "none", values = cols) +
     labs(x = "Antiviral effectiveness", y = "Averted hospitalizations relative to worst-case (#)")
-ggsave(here("figs", "figS2.png"), width = 6, height = 5, dpi = 800)
 
+# plot NNT: need to combine # hosps averted with # NAIs used
+p_nnt <- change.worst %>% filter(risk == "all", age == "all") %>%
+    gather(scenario, change, contains("testing")) %>%
+    separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
+    left_join(nai.used) %>%
+    mutate(nnt = nai.total/change) %>%
+    do(., get_summary(., var = "nnt", groups = c("effectiveness", "testing", "prescribing"))) %>%
+    mutate(effectiveness = gsub(effectiveness, pattern = " NAI effect", replacement = "")) %>%
+    ggplot(aes(x = effectiveness, y = mean, color = effectiveness)) + 
+    geom_point(size = ptsize) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = barsize - 0.2, linewidth = barwdth) +
+    facet_grid(testing ~ prescribing) +
+    get_theme(txt = 11) + 
+    scale_y_continuous(labels = comma) +
+    scale_color_manual(guide = "none", values = cols) +
+    labs(x = "Antiviral effectiveness", y = "Number needed to treat")
+
+p_total / p_nnt + plot_annotation(tag_levels = 'A')
+ggsave(here("figs", "figS2.png"), width = 8, height = 10, dpi = 800)
+
+# Partitioned by age and risk group ---------------
 change.worst %>% filter(age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
@@ -342,6 +355,12 @@ change.perc.worst %>% filter(age != "all") %>%
     labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (%)")
 ggsave(here("figs", "figS3.png"), width = 8, height = 7, dpi = 800)
 ```
+
+
+```{r, fig.height = 3, fig.width = 6}
+
+```
+
 
 
 ### Alternative scenarios: increased individual-level parameters
