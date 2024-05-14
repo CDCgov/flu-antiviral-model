@@ -489,7 +489,7 @@ p_alt_perc <-
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9) + 
+    facet_grid(~ age_names) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt) +
     labs(x = "Risk stratification", y = "Averted percent of hospitalizations\nrelative to worst-case")
@@ -513,7 +513,7 @@ p_alt_nnt <-
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9) + 
+    facet_grid(~ age_names) + get_theme(txt = 9) + 
     scale_y_log10(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt) +
     labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
@@ -574,7 +574,7 @@ p_alt2_num <-
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
+    facet_grid(~ age_names) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) +
     scale_color_manual("Scenario", values = cols_alt[c(1, 2, 4,5)]) +
     labs(x = "", y = "Averted number of hospitalizations\nrelative to worst-case")
@@ -589,7 +589,7 @@ p_alt2_perc <-
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9) + 
+    facet_grid(~ age_names) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 2, 4,5)]) +
     labs(x = "", y = "Averted percent of hospitalizations\nrelative to worst-case")
@@ -613,7 +613,7 @@ p_alt2_nnt <-
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9) + 
+    facet_grid(~ age_names) + get_theme(txt = 9) + 
     scale_y_log10(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 2, 4,5)]) +
     labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
@@ -670,7 +670,7 @@ p_alt3_num <-
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
+    facet_grid(~ age_names) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) + 
     scale_color_manual("Scenario", values = cols_alt[c(1, 5)]) + 
     labs(x = "", y = "Averted number of hospitalizations\nrelative to worst-case")
@@ -684,7 +684,7 @@ p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9) + 
+    facet_grid(~ age_names) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 5)]) + 
     labs(x = "", y = "Averted percent of hospitalizations\nrelative to worst-case")
@@ -708,7 +708,7 @@ p_alt3_nnt <-
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9) + 
+    facet_grid(~ age_names) + get_theme(txt = 9) + 
     scale_y_log10(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 5)]) +
     labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
