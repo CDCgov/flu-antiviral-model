@@ -141,7 +141,9 @@ rename_pars(pars_long) %>%
     geom_violin(alpha = 0.5, position = position_dodge(width = 0.75)) + 
     geom_boxplot(width = 0.1, position = position_dodge(width = 0.75)) +
     scale_fill_manual("Risk", values = cols_risk[2:3]) + ylim(c(0, 1)) +
-    facet_wrap(~ parname, ncol = 3) + get_theme(txt = 11, legend.position = c(0.85, 0.25)) +
+    facet_wrap(~ parname, ncol = 3) + 
+    get_theme(txt = 11, legend.position = c(0.85, 0.25)) +
+    scale_x_discrete(labels = age_labels) +
     labs(x = "", y = "Sampled value")
 ggsave(here("figs", "fig2.png"), width = 8, height = 5, dpi = 300)
 
@@ -299,7 +301,7 @@ p_total <- total_averted %>%
     get_theme(txt =11) + 
     scale_y_continuous(labels = comma) +
     scale_color_manual(guide = "none", values = cols) +
-    labs(x = "Antiviral effectiveness", y = "Averted hospitalizations relative to worst-case (#)")
+    labs(x = "Antiviral effectiveness", y = "Averted number of hospitalizations relative to worst-case")
 
 # plot NNT: need to combine # hosps averted with # NAIs used
 p_nnt <- change.worst %>% filter(risk == "all", age == "all") %>%
@@ -337,7 +339,7 @@ change.worst %>% filter(age != "all") %>%
     get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual("Risk", values = cols_risk) +
-    labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (#)")
+    labs(x = "Age (years)", y = "Averted number of hospitalizations relative to worst-case")
 ggsave(here("figs", "fig3.png"), width = 8, height = 7, dpi = 800)
 
 change.perc.worst %>% filter(age != "all") %>%
@@ -354,11 +356,11 @@ change.perc.worst %>% filter(age != "all") %>%
     get_theme(txt = 11, legend.position = "top") + 
     scale_y_continuous(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual("Risk", values = cols_risk) +
-    labs(x = "Age (years)", y = "Averted hospitalizations relative to worst-case (%)")
+    labs(x = "Age (years)", y = "Averted percent of hospitalizations relative to worst-case")
 ggsave(here("figs", "figS3.png"), width = 8, height = 7, dpi = 800)
 
 # NNT
-nai.used.age.risk <- out.baseline %>% 
+nai.used.age.risk0 <- out.baseline %>% 
     select(sim, risk, age, scenario, nai.total) %>% 
     spread(risk, nai.total) %>% mutate(all = high + low) %>%
     gather(risk, nai.total, high, low, all) %>%
@@ -369,9 +371,10 @@ nai.used.age.risk <- out.baseline %>%
 change.worst %>% filter(age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
-    left_join(nai.used.age.risk) %>%
+    left_join(nai.used.age.risk0) %>%
     filter(effectiveness == "high NAI effect") %>%
-    mutate(nnt = nai.total/change) %>%
+    mutate(nnt = nai.total/change,
+           age = factor(age, levels = age.grps)) %>%
     do(., get_summary(., var = "nnt", groups = c("risk", "age", "testing", "prescribing", "effectiveness"))) %>%
     ggplot(aes(x = age, y = mean, color = risk)) + 
     geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
@@ -437,8 +440,9 @@ rename_pars(pars_long) %>%
     scale_fill_manual("Value", values = cols_alt) +
     ylim(c(0, 1)) +
     facet_grid(parname ~ risk) + get_theme(txt = 11) +
+    scale_x_discrete(labels = age_labels) +
     labs(x = "Age (years)", y = "Sampled value")
-ggsave(here("figs", "figS1.png"), width = 8, height = 6)
+ggsave(here("figs", "figS1.png"), width = 8, height = 6, dpi = 600)
 ```
 
 Compare to worst-case scenario, assuming NAI effectiveness is at its highest value.
@@ -464,20 +468,23 @@ p_alt_num <-
     change.worst %>% 
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    # add formal age group labels
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
+    facet_grid(~ age_names) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) +
     scale_color_manual(NULL, values = cols_alt) +
-    labs(x = "Risk stratification", y = "Averted hospitalizations relative to worst-case (#)")
+    labs(x = "Risk stratification", y = "Averted number of hospitalizations\nrelative to worst-case")
 
 # Plot compared to worst case (% differences)
 p_alt_perc <- 
     change.perc.worst %>% 
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -485,10 +492,35 @@ p_alt_perc <-
     facet_grid(~ age) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt) +
-    labs(x = "Risk stratification", y = "Averted hospitalizations relative to worst-case (%)")
+    labs(x = "Risk stratification", y = "Averted percent of hospitalizations\nrelative to worst-case")
 
-p_alt_num / p_alt_perc + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9))
-ggsave(here("figs", "fig4.png"), width = 8, height = 7.5)
+# Plot NNT
+nai.used.age.risk <- out.alt.cs %>% 
+    select(sim, alternative, risk, age, nai.total) %>% 
+    spread(risk, nai.total) %>% mutate(all = high + low) %>%
+    gather(risk, nai.total, high, low, all) %>%
+    group_by(sim, age, risk, alternative) %>%
+    summarize(nai.total = sum(nai.total), .groups = "drop") 
+
+p_alt_nnt <- 
+    change.worst %>% filter(age != "all") %>%
+    rename(change = 'high testing, high prescribing, high NAI effect') %>%
+    left_join(nai.used.age.risk) %>%
+    mutate(nnt = nai.total/change) %>%
+    do(., get_summary(., var = "nnt", groups = c("risk", "age", "alternative")) ) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9) + 
+    scale_y_log10(labels = comma) + 
+    scale_color_manual(guide = "none", values = cols_alt) +
+    labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
+
+p_alt_num / p_alt_perc / p_alt_nnt + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9, 0.9))
+ggsave(here("figs", "fig4.png"), width = 8, height = 9, dpi = 600)
+
 ```
 
 
@@ -537,31 +569,57 @@ p_alt2_num <-
     change.worst %>% 
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
     facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) +
-    scale_color_manual("Scenario", values = cols_alt) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (#)")
+    scale_color_manual("Scenario", values = cols_alt[c(1, 2, 4,5)]) +
+    labs(x = "", y = "Averted number of hospitalizations\nrelative to worst-case")
 
 # Compare worst-case to baseline scenarios (% difference)
 p_alt2_perc <- 
     change.perc.worst %>% 
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
     facet_grid(~ age) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
-    scale_color_manual(guide = "none", values = cols_alt) +
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (%)")
+    scale_color_manual(guide = "none", values = cols_alt[c(1, 2, 4,5)]) +
+    labs(x = "", y = "Averted percent of hospitalizations\nrelative to worst-case")
 
-p_alt2_num / p_alt2_perc + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9))
-ggsave(here("figs", "figS5.png"), width = 8, height = 7.5)
+# Plot NNT
+nai.used.age.risk2 <- out.alt %>% 
+    select(sim, alternative, risk, age, nai.total) %>% 
+    spread(risk, nai.total) %>% mutate(all = high + low) %>%
+    gather(risk, nai.total, high, low, all) %>%
+    group_by(sim, age, risk, alternative) %>%
+    summarize(nai.total = sum(nai.total), .groups = "drop") 
+
+p_alt2_nnt <- 
+    change.worst %>% filter(age != "all") %>%
+    rename(change = 'high testing, high prescribing, high NAI effect') %>%
+    left_join(nai.used.age.risk2) %>%
+    mutate(nnt = nai.total/change) %>%
+    do(., get_summary(., var = "nnt", groups = c("risk", "age", "alternative")) ) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9) + 
+    scale_y_log10(labels = comma) + 
+    scale_color_manual(guide = "none", values = cols_alt[c(1, 2, 4,5)]) +
+    labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
+
+p_alt2_num / p_alt2_perc / p_alt2_nnt + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9, 0.9))
+ggsave(here("figs", "figS5.png"), width = 8, height = 9)
 ```
 
 
@@ -607,6 +665,7 @@ p_alt3_num <-
     change.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -614,12 +673,13 @@ p_alt3_num <-
     facet_grid(~ age) + get_theme(txt = 9, legend.position = "top") + 
     scale_y_log10(labels = comma) + 
     scale_color_manual("Scenario", values = cols_alt[c(1, 5)]) + 
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (#)")
+    labs(x = "", y = "Averted number of hospitalizations\nrelative to worst-case")
 
 # Compare worst-case to baseline scenarios (% difference)
 p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -627,34 +687,50 @@ p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
     facet_grid(~ age) + get_theme(txt = 9) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 5)]) + 
-    labs(x = "", y = "Averted hospitalizations relative to worst-case (%)")
+    labs(x = "", y = "Averted percent of hospitalizations\nrelative to worst-case")
 
-p_alt3_num / p_alt3_perc + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9))
-ggsave(here("figs", "figS6.png"), width = 8, height = 7.5)
+# Plot NNT
+nai.used.age.risk3 <- out.all %>% 
+    select(sim, alternative, risk, age, nai.total) %>% 
+    spread(risk, nai.total) %>% mutate(all = high + low) %>%
+    gather(risk, nai.total, high, low, all) %>%
+    group_by(sim, age, risk, alternative) %>%
+    summarize(nai.total = sum(nai.total), .groups = "drop") 
+
+p_alt3_nnt <- 
+    change.worst %>% filter(age != "all") %>%
+    rename(change = 'high testing, high prescribing, high NAI effect') %>%
+    left_join(nai.used.age.risk3) %>%
+    mutate(nnt = nai.total/change) %>%
+    do(., get_summary(., var = "nnt", groups = c("risk", "age", "alternative")) ) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    ggplot(aes(x = risk, y = mean, color = alternative)) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_errorbar(aes(ymin = lower, ymax = upper), 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
+    facet_grid(~ age) + get_theme(txt = 9) + 
+    scale_y_log10(labels = comma) + 
+    scale_color_manual(guide = "none", values = cols_alt[c(1, 5)]) +
+    labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
+
+p_alt3_num / p_alt3_perc / p_alt3_nnt + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9, 0.9))
+ggsave(here("figs", "figS6.png"), width = 8, height = 9)
 ```
 
-## Everything single and then combined
+```{r}
+# Across all age groups / risk stratifications: numbers for text
+ nai.used.all <- out.all %>% 
+    select(sim, alternative, risk, age, nai.total) %>% 
+    spread(risk, nai.total) %>% mutate(all = high + low) %>%
+    gather(risk, nai.total, high, low, all) %>%
+    group_by(sim, risk, alternative) %>%
+    summarize(nai.total = sum(nai.total), .groups = "drop") %>%
+    filter(risk == "all")
 
-```{r, include = FALSE}
-tmp.pars <- pars %>% filter(scenario == "high testing, high prescribing, high NAI effect") 
-
-pars.alt1 <- tmp.pars %>% mutate(prescribed.nai.pos.early = ifelse(risk == "high", 0.75, 0.37), 
-                                 prescribed.nai.pos.late  = ifelse(risk == "high", 0.30, 0.15))
-pars.alt2 <- tmp.pars %>% mutate(perc.tested.early = 0.75, perc.tested.late = 0.15)
-pars.alt3 <- tmp.pars %>% mutate(prescribed.nai.pos.early = ifelse(risk == "high", 0.75, 0.37), 
-                                 prescribed.nai.pos.late  = ifelse(risk == "high", 0.30, 0.15),
-                                 perc.tested.early = 0.75, perc.tested.late = 0.15)
-
-pars.alt <- bind_rows(tmp.pars, pars.alt1, pars.alt2, 
-                      pars.alt.cs1, pars.alt.cs2, pars.alt.cs3, 
-                      pars.all) %>% 
-                mutate(alternative = rep(c("baseline", 
-                                           "prescribing",
-                                           "testing",
-                                           "care-seeking", 
-                                           "early-care-seeking", 
-                                           "compliance", "all parameters"), each = nrow(tmp.pars))) %>%
-    # make sure new inputs don't exceed 1
-    mutate(across(c(seek.care, seek.care.early, nai.compliance), function(x) pmin(x, 1)))
+change.worst %>% filter(age == "all", risk == "all") %>%
+    rename(change = 'high testing, high prescribing, high NAI effect') %>%
+    left_join(nai.used.all) %>%
+     mutate(nnt = nai.total/change) %>%
+    do(., get_summary(., var = "nnt", groups = c("risk", "age", "alternative")) )
 ```
 
