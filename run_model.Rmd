@@ -408,11 +408,11 @@ pars.alt.cs4 <- tmp.pars %>% mutate(seek.care = seek.care * 1.5,
                                 seek.care.early = seek.care.early * 1.5, 
                                 nai.compliance = nai.compliance * 1.5)
 
+ind_levels <- c("initial", "seek care", "seek care early", "comply", "seek care, seek care early, and comply")
+
 # join all new scenarios together
 pars.alt.cs <- bind_rows(tmp.pars, pars.alt.cs1, pars.alt.cs2, pars.alt.cs3, pars.alt.cs4) %>% 
-                mutate(alternative = rep(c("baseline", "more care-seeking", 
-                                           "more early-care-seeking", "more compliance",
-                                           "more everything"), each = nrow(tmp.pars))) %>%
+                mutate(alternative = rep(ind_levels, each = nrow(tmp.pars))) %>%
     # make sure new inputs don't exceed 1
     mutate(across(c(seek.care, seek.care.early, nai.compliance), function(x) pmin(x, 1)))
 
@@ -426,10 +426,10 @@ Plot new parameter distributions
 pars_long <- 
     pars.alt.cs %>% distinct(sim, risk, age, seek.care, seek.care.early, nai.compliance, alternative) %>%
     gather(param, value, seek.care, seek.care.early, nai.compliance) %>%
-    filter( alternative == "baseline" | (param == "seek.care" & alternative ==  "more care-seeking") | 
-            (param == "seek.care.early" & alternative ==  "more early-care-seeking") | 
-                (param == "nai.compliance" & alternative ==  "more compliance")) %>%
-    mutate(scenario = ifelse(alternative == "baseline", alternative, "50% increase"))
+    filter( alternative == "initial" | (param == "seek.care" & alternative ==  "seek care") | 
+            (param == "seek.care.early" & alternative ==  "seek care early") | 
+                (param == "nai.compliance" & alternative ==  "comply")) %>%
+    mutate(scenario = ifelse(alternative == "initial", alternative, "50% increase"))
 
 # add better parameter names for plotting
 rename_pars(pars_long) %>%
@@ -469,12 +469,14 @@ p_alt_num <-
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
     # add formal age group labels
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = ind_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
                   position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
     facet_grid(~ age_names) + get_theme(txt = 9, legend.position = "top") + 
+    #guides(color = guide_legend(ncol = 4, byrow = F)) +
     scale_y_log10(labels = comma) +
     scale_color_manual(NULL, values = cols_alt) +
     labs(x = "Risk stratification", y = "Averted number of hospitalizations\nrelative to worst-case")
@@ -484,7 +486,8 @@ p_alt_perc <-
     change.perc.worst %>% 
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = ind_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -508,7 +511,8 @@ p_alt_nnt <-
     left_join(nai.used.age.risk) %>%
     mutate(nnt = nai.total/change) %>%
     do(., get_summary(., var = "nnt", groups = c("risk", "age", "alternative")) ) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = ind_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -539,11 +543,10 @@ pars.alt3 <- tmp.pars %>% mutate(prescribed.nai.pos.early = ifelse(risk == "high
                                  prescribed.nai.pos.late  = ifelse(risk == "high", 0.30, 0.15),
                                  perc.tested.early = 0.75, perc.tested.late = 0.15)
 
+clinical_levels <- c("initial", "prescribing", "testing", "testing and prescribing")
+
 pars.alt <- bind_rows(tmp.pars, pars.alt1, pars.alt2, pars.alt3) %>% 
-                mutate(alternative = rep(c("baseline", 
-                                           "prescribing",
-                                           "testing",
-                                           "testing & prescribing"), each = nrow(tmp.pars)))
+                mutate(alternative = rep(clinical_levels, each = nrow(tmp.pars)))
 
 out.alt <- get_outcomes(pars.alt) 
 ```
@@ -569,7 +572,8 @@ p_alt2_num <-
     change.worst %>% 
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = clinical_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -584,7 +588,8 @@ p_alt2_perc <-
     change.perc.worst %>% 
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = clinical_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -608,7 +613,8 @@ p_alt2_nnt <-
     left_join(nai.used.age.risk2) %>%
     mutate(nnt = nai.total/change) %>%
     do(., get_summary(., var = "nnt", groups = c("risk", "age", "alternative")) ) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = clinical_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -636,8 +642,10 @@ pars.all <- pars0 %>% mutate(prescribed.nai.pos.early = ifelse(risk == "high", 0
                              seek.care.early = seek.care.early * 1.5, 
                              nai.compliance = nai.compliance * 1.5)
 
+all_levels <- c("initial", "increase in all 5 parameters")
+
 pars.all <- bind_rows(pars0, pars.all) %>% 
-            mutate(alternative = rep(c("baseline", "everything"), each = nrow(pars0))) %>%
+            mutate(alternative = rep(all_levels, each = nrow(pars0))) %>%
             # make sure new inputs don't exceed 1
             mutate(across(c(seek.care, seek.care.early, nai.compliance), function(x) pmin(x, 1)))
 
@@ -665,7 +673,8 @@ p_alt3_num <-
     change.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = all_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -679,7 +688,8 @@ p_alt3_num <-
 p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = all_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
@@ -703,7 +713,8 @@ p_alt3_nnt <-
     left_join(nai.used.age.risk3) %>%
     mutate(nnt = nai.total/change) %>%
     do(., get_summary(., var = "nnt", groups = c("risk", "age", "alternative")) ) %>%
-    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels)) %>%
+    mutate(age_names = factor(age_labels[match(age, age.grps)], levels = age_labels),
+           alternative = factor(alternative, levels = all_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
