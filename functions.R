@@ -199,7 +199,7 @@ get_summary <- function(dat, var, groups, level = 0.95) {
 #' @export
 #'
 #' @examples
-get_theme <- function(txt = 12, ...) {
+get_theme <- function(txt = 10, ...) {
     theme_light() + theme(axis.text = element_text(size = txt),
                           axis.title = element_text(size = txt),
                           legend.text = element_text(size = txt),
