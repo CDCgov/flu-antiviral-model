@@ -229,32 +229,32 @@ rename_pars <- function(dat, reorder = TRUE) {
                                     clinical.attack.rate = "Clinical attack rate",
                                     hosp.risk = "Risk of hospitalization",
                                     seek.care = "Seek care", 
-                                    seek.care.early = "Seek care within 2d", 
+                                    seek.care.early = "Seek care within 48 hours", 
                                     
-                                    perc.tested.early = "Fraction tested (< 2d)", 
-                                    perc.tested.late = "Fraction tested (> 2d)", 
+                                    perc.tested.early = "Fraction tested (< 48hrs)", 
+                                    perc.tested.late = "Fraction tested (> 48hrs)", 
                                     test.sens = "Test sensitivity",
                                     
-                                    diagnosis.early = "Positive test (< 2d)",
-                                    diagnosis.late  = "Positive test (> 2d)",
+                                    diagnosis.early = "Positive test (< 48hrs)",
+                                    diagnosis.late  = "Positive test (> 48hrs)",
                                     
-                                    prescribed.nai.pos.early = "Prescribed NAIs (< 2d, pos test)", 
-                                    prescribed.nai.pos.late  = "Prescribed NAIs (> 2d, pos test)", 
-                                    prescribed.nai.neg.early = "Prescribed NAIs (< 2d, no pos test)", 
-                                    prescribed.nai.neg.late  = "Prescribed NAIs (> 2d, no pos test)", 
+                                    prescribed.nai.pos.early = "Prescribed NAIs (< 48hrs, pos test)", 
+                                    prescribed.nai.pos.late  = "Prescribed NAIs (> 48hrs, pos test)", 
+                                    prescribed.nai.neg.early = "Prescribed NAIs (< 48hrs, no pos test)", 
+                                    prescribed.nai.neg.late  = "Prescribed NAIs (> 48hrs, no pos test)", 
                                     
                                     nai.compliance = "Full compliance", 
-                                    nai.effect.early = "NAI effect (< 2d)", 
-                                    nai.effect.late = "NAI effect (> 2d)"
+                                    nai.effect.early = "NAI effect (< 48hrs)", 
+                                    nai.effect.late = "NAI effect (> 48hrs)"
                                     ) )
     
     if(reorder) dat$parname <- factor(dat$parname, levels = c("Fraction high-risk", "Clinical attack rate",  "Risk of hospitalization",
-                                                              "Seek care", "Seek care within 2d", 
-                                                              "Fraction tested (< 2d)", "Fraction tested (> 2d)", "Test sensitivity", 
-                                                              "Positive test (< 2d)", "Positive test (> 2d)",
-                                                              "Prescribed NAIs (< 2d, pos test)", "Prescribed NAIs (> 2d, pos test)",
-                                                              "Prescribed NAIs (< 2d, no pos test)", "Prescribed NAIs (> 2d, no pos test)", 
-                                                              "Full compliance",  "NAI effect (< 2d)", "NAI effect (> 2d)"))
+                                                              "Seek care", "Seek care within 48 hours", 
+                                                              "Fraction tested (< 48hrs)", "Fraction tested (> 48hrs)", "Test sensitivity", 
+                                                              "Positive test (< 48hrs)", "Positive test (> 48hrs)",
+                                                              "Prescribed NAIs (< 48hrs, pos test)", "Prescribed NAIs (> 48hrs, pos test)",
+                                                              "Prescribed NAIs (< 48hrs, no pos test)", "Prescribed NAIs (> 48hrs, no pos test)", 
+                                                              "Full compliance",  "NAI effect (< 48hrs)", "NAI effect (> 48hrs)"))
     return(dat)
 }
 
