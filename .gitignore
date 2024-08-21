@@ -44,6 +44,4 @@ vignettes/*.pdf
 *.pptx
 
 # Additional data files
-surveymonkey_data_exploration.html
-surveymonkey_data_exploration.Rmd
 data/
