@@ -35,7 +35,7 @@ source("functions.R")
 ### Baseline parameters
 
 * Clinical attack rates are derived from the 2022/23 season burden estimates. 
-* Percent who are prescribed antivirals is informed by VISION, VE Network, and literature review
+* Percent who are prescribed antiviral neuraminidase inhibitors (NAIs) is informed by VISION, VE Network, and literature review
 * Care-seeking is informed by Outbreaks Near Me (ONM) and VE Network
 * Percent tested informed by VISION
 * Test sensitivity is informed by literature for molecular rapid tests.
