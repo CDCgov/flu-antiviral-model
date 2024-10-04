@@ -34,12 +34,12 @@ source("functions.R")
 
 ### Baseline parameters
 
-* Clinical attack rates come from the 2022/23 season burden estimates. 
-* Percent who are prescribed NAIs informed by VISION, VE Network, and literature review
-* Care-seeking comes from FNY/ONM and VE Network
+* Clinical attack rates are detived from the 2022/23 season burden estimates. 
+* Percent who are prescribed antivirals is informed by VISION, VE Network, and literature review
+* Care-seeking is informed by Outbreaks Near Me (ONM) and VE Network
 * Percent tested informed by VISION
 * Test sensitivity is informed by literature for molecular rapid tests.
-* Antiviral compliance is informed by ONM and RVTN
+* Antiviral compliance is informed by ONM and the Respiratory Virus Transmission Network (RVTN)
 
 
 ```{r}
@@ -323,7 +323,7 @@ change.worst %>% filter(risk == "all", age == "all") %>%
 ```
 
 
-```{r, fig.height = 9, fig.width = 10}
+```{r, fig.height = 10, fig.width = 10}
 # plot total averted
 p_total <- total_averted %>% 
     mutate(effectiveness = gsub(effectiveness, pattern = " NAI effect", replacement = "")) %>%
