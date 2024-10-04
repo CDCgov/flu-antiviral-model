@@ -127,13 +127,14 @@ pars.table <- rbind(pars.table.lr, pars.table.hr)
 pars.range <- get_parameters(nsamples = nsim, pars.table) %>% mutate(age = factor(age, levels = age.grps))
 ```
 
-```{r, fig.height = 6}
+```{r, fig.height = 6, results='hide'}
 # Plot select parameter distributions
 pars_long <- pars.range %>% 
     gather(param, value, 
            clinical.attack.rate, hosp.risk, seek.care, seek.care.early, test.sens, nai.compliance) 
 
 # add better parameter names for plotting
+cairo_pdf(here("figs", "fig2.pdf"), width = 8, height = 5)
 rename_pars(pars_long) %>%
     # hosp.risk doesn't vary --> don't need to plot distribution
     filter(param != "hosp.risk") %>%
@@ -145,7 +146,7 @@ rename_pars(pars_long) %>%
     get_theme(txt = 11, legend.position = c(0.85, 0.25)) +
     scale_x_discrete(labels = age_labels) +
     labs(x = "Age (years)", y = "Sampled value")
-ggsave(here("figs", "fig2.png"), width = 8, height = 5, dpi = 300)
+dev.off()
 
 # Optional plot that combines low/high risk with weighted averages across everyone
 pars_long %>% mutate(weighted.value = value * proportion) %>%
@@ -228,7 +229,7 @@ pars.high <- pars.range %>% filter(risk == "high") %>% expand_grid(., scenario.g
 pars <- rbind(pars.low, pars.high) 
 ```
 
-```{r, fig.width = 10, fig.height = 6}
+```{r}
 out.baseline <- get_outcomes(pars) %>% 
                     mutate(scenario.all = scenario) %>%
                     separate(scenario.all, c("testing", "prescribing", "effectiveness"), ", ") 
@@ -353,7 +354,7 @@ p_nnt <- change.worst %>% filter(risk == "all", age == "all") %>%
     labs(x = "Antiviral effectiveness", y = "Number of prescriptions per averted hospitalization")
 
 p_total / p_nnt + plot_annotation(tag_levels = 'A')
-ggsave(here("figs", "figS2.png"), width = 8, height = 10, dpi = 800)
+ggsave(here("figs", "figS2.pdf"), width = 8, height = 10)
 ```
 
 Partitioned by age and risk group:
@@ -370,7 +371,10 @@ tmp <- change.worst %>% filter(age != "all") %>%
 
 tmp %>% filter(risk == "high", testing == "high testing", prescribing == "high prescribing") 
 tmp %>% filter(risk == "high", testing == "low testing", prescribing == "low prescribing") 
+```
 
+```{r, results='hide'}
+cairo_pdf(here("figs", "fig3.pdf"), width = 8, height = 7)
 tmp %>%
     ggplot(aes(x = age, y = mean, color = risk)) + 
     geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
@@ -381,7 +385,7 @@ tmp %>%
     scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual("Risk", values = cols_risk) +
     labs(x = "Age (years)", y = "Number of hospitalizations averted relative to baseline")
-ggsave(here("figs", "fig3.png"), width = 8, height = 7, dpi = 800)
+dev.off()
 ```
 
 Total percent of hospitalizations averted
@@ -394,7 +398,10 @@ tmp2 <- change.perc.worst %>% filter(age != "all") %>%
     mutate(age = factor(age, levels = age.grps))
 
 tmp2 %>% arrange(age) %>% filter(risk == "high", testing == "high testing", prescribing == "high prescribing") 
+```
 
+```{r, results='hide'}
+cairo_pdf(here("figs", "figS3.pdf"), width = 8, height = 7)
 tmp2 %>%
     ggplot(aes(x = age, y = mean, color = risk)) + 
     geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
@@ -405,7 +412,7 @@ tmp2 %>%
     scale_y_continuous(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual("Risk", values = cols_risk) +
     labs(x = "Age (years)", y = "Percent of hospitalizations averted relative to baseline")
-ggsave(here("figs", "figS3.png"), width = 8, height = 7, dpi = 800)
+dev.off()
 
 # NNT
 nai.used.age.risk0 <- out.baseline %>% 
@@ -416,6 +423,7 @@ nai.used.age.risk0 <- out.baseline %>%
     group_by(sim, age, risk, testing, prescribing, effectiveness) %>%
     summarize(nai.total = sum(nai.total), .groups = "drop") 
 
+cairo_pdf(here("figs", "figS4.pdf"), width = 8, height = 7)
 change.worst %>% filter(age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
@@ -433,7 +441,7 @@ change.worst %>% filter(age != "all") %>%
     scale_y_log10(labels = comma) + scale_x_discrete(labels = age_labels) +
     scale_color_manual("Risk", values = cols_risk) +
     labs(x = "Age (years)", y = "Number of prescriptions per averted hospitalization")
-ggsave(here("figs", "figS4.png"), width = 8, height = 7, dpi = 800)
+dev.off()
 ```
 
 
@@ -470,7 +478,7 @@ out.alt.cs <- get_outcomes(pars.alt.cs)
 
 Plot new parameter distributions
 
-```{r, fig.height = 6}
+```{r, fig.height = 6, results='hide'}
 pars_long <- 
     pars.alt.cs %>% distinct(sim, risk, age, seek.care, seek.care.early, nai.compliance, alternative) %>%
     gather(param, value, seek.care, seek.care.early, nai.compliance) %>%
@@ -480,6 +488,7 @@ pars_long <-
     mutate(scenario = ifelse(alternative == "initial", alternative, "50% increase"))
 
 # add better parameter names for plotting
+cairo_pdf(here("figs", "figS1.pdf"), width = 8, height = 6)
 rename_pars(pars_long) %>%
     mutate(risk = ifelse(risk == "high", "High risk", "Low risk")) %>%
     ggplot(aes(x = age, y = value, fill = scenario)) + 
@@ -490,7 +499,7 @@ rename_pars(pars_long) %>%
     facet_grid(parname ~ risk) + get_theme(txt = 11) +
     scale_x_discrete(labels = age_labels) +
     labs(x = "Age (years)", y = "Sampled value")
-ggsave(here("figs", "figS1.png"), width = 8, height = 6, dpi = 600)
+dev.off()
 ```
 
 Compare to worst-case scenario, assuming NAI effectiveness is at its highest value.
@@ -510,7 +519,7 @@ change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 ```
 
-```{r, fig.width = 10, fig.height = 8}
+```{r, fig.width = 10, fig.height = 8, results='hide'}
 # Plot compared to worst case (absolute differences)
 p_alt_num <- 
     change.worst %>% 
@@ -520,14 +529,13 @@ p_alt_num <-
     mutate(age_names = factor(paste(age_labels[match(age, age.grps)], "years"), levels = paste(age_labels, "years")),
            alternative = factor(alternative, levels = ind_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
-    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.35), size = ptsize - 0.3) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme(legend.position = "top") + 
-    #guides(color = guide_legend(ncol = 4, byrow = F)) +
+                  position = position_dodge(width = dodgewdth + 0.35), width = barsize + 0.3, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) +
     scale_color_manual(NULL, values = cols_alt) +
-    labs(x = "Risk stratification", y = "Number of hospitalizations averted\nrelative to baseline")
+    labs(x = "Risk stratification", y = "Number of hospitalizations\naverted relative to baseline")
 
 # Plot compared to worst case (% differences)
 p_alt_perc <- 
@@ -537,13 +545,13 @@ p_alt_perc <-
     mutate(age_names = factor(paste(age_labels[match(age, age.grps)], "years"), levels = paste(age_labels, "years")),
            alternative = factor(alternative, levels = ind_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
-    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.35), size = ptsize - 0.3) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme() + 
+                  position = position_dodge(width = dodgewdth + 0.35), width = barsize + 0.3, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt) +
-    labs(x = "Risk stratification", y = "Percent of hospitalizations averted\nrelative to baseline")
+    labs(x = "Risk stratification", y = "Percent of hospitalizations\naverted relative to baseline")
 
 # Plot NNT
 nai.used.age.risk <- out.alt.cs %>% 
@@ -562,17 +570,17 @@ p_alt_nnt <-
     mutate(age_names = factor(paste(age_labels[match(age, age.grps)], "years"), levels = paste(age_labels, "years")),
            alternative = factor(alternative, levels = ind_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
-    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.35), size = ptsize - 0.3) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme() + 
+                  position = position_dodge(width = dodgewdth + 0.35), width = barsize + 0.3, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11) + 
     scale_y_log10(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt) +
     labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
 
+cairo_pdf(file = here("figs", "fig4.pdf"), width = 8.25, height = 9)
 p_alt_num / p_alt_perc / p_alt_nnt + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9, 0.9))
-ggsave(here("figs", "fig4.png"), width = 8.25, height = 9, dpi = 600)
-
+dev.off()
 ```
 
 Total averted 
@@ -632,7 +640,7 @@ change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 ```
 
-```{r, fig.height = 8, fig.width = 10}
+```{r, fig.height = 8, fig.width = 10, results='hide'}
 # Compare worst-case to baseline scenarios (absolute difference)
 p_alt2_num <- 
     change.worst %>% 
@@ -641,13 +649,13 @@ p_alt2_num <-
     mutate(age_names = factor(paste(age_labels[match(age, age.grps)], "years"), levels = paste(age_labels, "years")),
            alternative = factor(alternative, levels = clinical_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
-    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.35), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme(legend.position = "top") + 
+                  position = position_dodge(width = dodgewdth + 0.35), width = barsize + 0.3, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) +
     scale_color_manual("Scenario", values = cols_alt[c(1, 2, 4,5)]) +
-    labs(x = "", y = "Number of hospitalizations averted\nrelative to baseline")
+    labs(x = "Risk stratification", y = "Number of hospitalizations\naverted relative to baseline")
 
 # Compare worst-case to baseline scenarios (% difference)
 p_alt2_perc <- 
@@ -657,13 +665,13 @@ p_alt2_perc <-
     mutate(age_names = factor(paste(age_labels[match(age, age.grps)], "years"), levels = paste(age_labels, "years")),
            alternative = factor(alternative, levels = clinical_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
-    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.35), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme() + 
+                  position = position_dodge(width = dodgewdth + 0.35), width = barsize + 0.3, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 2, 4,5)]) +
-    labs(x = "", y = "Percent of hospitalizations averted\nrelative to baseline")
+    labs(x = "Risk stratification", y = "Percent of hospitalizations\naverted relative to baseline")
 
 # Plot NNT
 nai.used.age.risk2 <- out.alt %>% 
@@ -682,16 +690,17 @@ p_alt2_nnt <-
     mutate(age_names = factor(paste(age_labels[match(age, age.grps)], "years"), levels = paste(age_labels, "years")),
            alternative = factor(alternative, levels = clinical_levels)) %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
-    geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
+    geom_point(position = position_dodge(width = dodgewdth + 0.35), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme() + 
+                  position = position_dodge(width = dodgewdth + 0.35), width = barsize + 0.3, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11) + 
     scale_y_log10(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 2, 4,5)]) +
     labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
 
+cairo_pdf(here("figs", "figS5.pdf"), width = 8.25, height = 9)
 p_alt2_num / p_alt2_perc / p_alt2_nnt + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9, 0.9))
-ggsave(here("figs", "figS5.png"), width = 8.25, height = 9)
+dev.off()
 ```
 
 Total averted
@@ -750,7 +759,7 @@ change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (
 change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 ```
 
-```{r, fig.height = 8, fig.width = 10}
+```{r, fig.height = 8, fig.width = 10, results='hide'}
 # Compare worst-case to baseline scenarios (absolute difference)
 p_alt3_num <- 
     change.worst %>% filter(age != "all") %>%
@@ -761,11 +770,11 @@ p_alt3_num <-
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme(legend.position = "top") + 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11, legend.position = "top") + 
     scale_y_log10(labels = comma) + 
     scale_color_manual("Scenario", values = cols_alt[c(1, 5)]) + 
-    labs(x = "", y = "Number of hospitalizations averted\nrelative to baseline")
+    labs(x = "Risk stratification", y = "Number of hospitalizations\naverted relative to baseline")
 
 # Compare worst-case to baseline scenarios (% difference)
 p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
@@ -776,11 +785,11 @@ p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme() + 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11) + 
     scale_y_continuous(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 5)]) + 
-    labs(x = "", y = "Percent of hospitalizations averted\nrelative to baseline")
+    labs(x = "Risk stratification", y = "Percent of hospitalizations\naverted relative to baseline")
 
 # Plot NNT
 nai.used.age.risk3 <- out.all %>% 
@@ -801,14 +810,15 @@ p_alt3_nnt <-
     ggplot(aes(x = risk, y = mean, color = alternative)) + 
     geom_point(position = position_dodge(width = dodgewdth + 0.1), size = ptsize - 0.25) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
-                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth) +
-    facet_grid(~ age_names) + get_theme() + 
+                  position = position_dodge(width = dodgewdth + 0.1), width = barsize + 0.1, linewidth = barwdth - 0.1) +
+    facet_grid(~ age_names) + get_theme(txt = 11) + 
     scale_y_log10(labels = comma) + 
     scale_color_manual(guide = "none", values = cols_alt[c(1, 5)]) +
     labs(x = "Risk stratification", y = "Number of prescriptions\nper averted hospitalization")
 
+cairo_pdf(here("figs", "figS6.pdf"), width = 8.25, height = 9)
 p_alt3_num / p_alt3_perc / p_alt3_nnt + plot_annotation(tag_levels = 'A') + plot_layout(heights = c(1, 0.9, 0.9))
-ggsave(here("figs", "figS6.png"), width = 8.25, height = 9)
+dev.off()
 ```
 
 Total averted 
