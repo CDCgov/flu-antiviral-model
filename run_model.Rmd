@@ -53,19 +53,19 @@ age_labels <- c(age.grps[1:4], '\u226565')
 # 2023 US census data 
 total.population <- 334914895
 
-# Proportion high risk in each age group (currently from Zimmerman 2010)
+# Proportion high risk in each age group (Zimmerman 2010)
 high.risk <- c(0.05, 0.10, 0.20, 0.35, 0.55)
 
 # Calculate risk stratifications for parameters with population averages and relative ratios
 
 # CHR
-chr <- get_risk_stratifications(pop = 1/c(152.51, 181.96, 184.73, 95.83, 19.77),   # Danielle's updated 22/23 analysis 
-                                rr =  c(1, 1, 5.5, 8.9, 4.9),               # Matias 2017 for now
+chr <- get_risk_stratifications(pop = 1/c(143.44, 364.71, 178.16, 94.30, 11.00),   
+                                rr =  c(1, 1, 5.5, 8.9, 4.9),      # Matias 2017 
                                 prop.high = high.risk)
  
 # Care-seeking lower bound
 seek.care.lower <- get_risk_stratifications(pop = c(0.25, 0.25, 0.35, 0.45, 0.45), # ONM
-                                            rr =  rep(1.3, 5),        # Biggerstaff 2010       
+                                            rr =  rep(1.3, 5),    # Biggerstaff 2010       
                                             prop.high = high.risk) 
 
 # Care-seeking upper bound
@@ -88,7 +88,6 @@ pars.table.lr <-
         # proportion low risk in each age group 
         proportion = 1 - high.risk,
         # clinical attack rate (CAR), 2022/23
-        # updated from Danielle's analysis
         car.lo = c(0.11, 0.12, 0.06, 0.07, 0.02), 
         car.hi = c(0.33, 0.43, 0.14, 0.17, 0.09),
         # molecular/ rapid test sensitivity (for those tested)
