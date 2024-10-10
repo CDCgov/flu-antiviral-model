@@ -83,13 +83,13 @@ pars.table.lr <-
     data.frame(
         risk = "low",
         age = c("0-4", "5-17", "18-49", "50-64", "65+"),  
-        # population size, 2022
-        population = total.population * c(0.066, 0.160, 0.416, 0.187, 0.172),
+        # population size, 2022 census
+        population = c(18538353 + 3683113, 53912474, 140148894, 62892984, 57794852),
         # proportion low risk in each age group 
         proportion = 1 - high.risk,
         # clinical attack rate (CAR), 2022/23
         car.lo = c(0.11, 0.12, 0.06, 0.07, 0.02), 
-        car.hi = c(0.33, 0.43, 0.14, 0.17, 0.09),
+        car.hi = c(0.34, 0.44, 0.14, 0.18, 0.09),
         # molecular/ rapid test sensitivity (for those tested)
         test.sens.lo = rep(0.8, n.ages),
         test.sens.hi = rep(1.0, n.ages),
