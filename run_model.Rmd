@@ -50,9 +50,6 @@ n.ages   <- length(age.grps)
 # labels for age groups when plotting (\u2265 = greater than or equal to)
 age_labels <- c(age.grps[1:4], '\u226565')
 
-# 2023 US census data 
-total.population <- 334914895
-
 # Proportion high risk in each age group (Zimmerman 2010)
 high.risk <- c(0.05, 0.10, 0.20, 0.35, 0.55)
 
@@ -83,7 +80,7 @@ pars.table.lr <-
     data.frame(
         risk = "low",
         age = c("0-4", "5-17", "18-49", "50-64", "65+"),  
-        # population size, 2022 census
+        # population, 2022 cUS ensus
         population = c(18538353 + 3683113, 53912474, 140148894, 62892984, 57794852),
         # proportion low risk in each age group 
         proportion = 1 - high.risk,
@@ -387,7 +384,8 @@ tmp %>%
 dev.off()
 ```
 
-Total percent of hospitalizations averted
+Total percent of hospitalizations averted and NNT
+
 ```{r}
 tmp2 <- change.perc.worst %>% filter(age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
@@ -422,15 +420,21 @@ nai.used.age.risk0 <- out.baseline %>%
     group_by(sim, age, risk, testing, prescribing, effectiveness) %>%
     summarize(nai.total = sum(nai.total), .groups = "drop") 
 
-cairo_pdf(here("figs", "figS4.pdf"), width = 8, height = 7)
-change.worst %>% filter(age != "all") %>%
+# quoted values
+tmp <- change.worst %>% filter(age != "all") %>%
     gather(scenario, change, contains("testing")) %>%
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     left_join(nai.used.age.risk0) %>%
     filter(effectiveness == "high NAI effect") %>%
     mutate(nnt = nai.total/change,
            age = factor(age, levels = age.grps)) %>%
-    do(., get_summary(., var = "nnt", groups = c("risk", "age", "testing", "prescribing", "effectiveness"))) %>%
+    do(., get_summary(., var = "nnt", groups = c("risk", "age", "testing", "prescribing", "effectiveness"))) 
+
+tmp %>% filter(risk == "high", age %in% c("0-4", "65+") )
+
+# plot
+cairo_pdf(here("figs", "figS4.pdf"), width = 8, height = 7)
+tmp %>%
     ggplot(aes(x = age, y = mean, color = risk)) + 
     geom_point(position = position_dodge(width = dodgewdth), size = ptsize) + 
     geom_errorbar(aes(ymin = lower, ymax = upper), 
