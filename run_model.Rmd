@@ -32,15 +32,7 @@ source("functions.R")
 ```
 
 
-### Baseline parameters
-
-* Clinical attack rates are derived from the 2022/23 season burden estimates. 
-* Percent who are prescribed antiviral neuraminidase inhibitors (NAIs) is informed by VISION, VE Network, and literature review
-* Care-seeking is informed by Outbreaks Near Me (ONM) and VE Network
-* Percent tested informed by VISION
-* Test sensitivity is informed by literature for molecular rapid tests.
-* Antiviral compliance is informed by ONM and the Respiratory Virus Transmission Network (RVTN)
-
+### Initial parameters
 
 ```{r}
 # Age groups 
@@ -143,20 +135,6 @@ rename_pars(pars_long) %>%
     scale_x_discrete(labels = age_labels) +
     labs(x = "Age (years)", y = "Sampled value")
 dev.off()
-
-# Optional plot that combines low/high risk with weighted averages across everyone
-pars_long %>% mutate(weighted.value = value * proportion) %>%
-    select(-proportion, - population, - value) %>% spread(risk, weighted.value) %>%
-    mutate(all = high + low) %>%
-    rename_pars(.)  %>% mutate(value = all, risk = "all") %>% select(-high, -low, - all) %>% 
-    bind_rows(rename_pars(pars_long)) %>%
-    filter(param != "hosp.risk") %>%
-    ggplot(aes(x = age, y = value, fill = risk)) + 
-    geom_violin(alpha = 0.5, position = position_dodge(width = 0.75)) + 
-    geom_boxplot(width = 0.1, position = position_dodge(width = 0.75)) +
-    scale_fill_manual("Risk", values = cols_risk) + ylim(c(0, 1)) +
-    facet_wrap(~ parname, ncol = 3) + get_theme(txt = 14, legend.position = c(0.85, 0.25)) +
-    labs(x = "", y = "Sampled value")
 ```
 
 ```{r}
@@ -172,7 +150,7 @@ testing.pars.low <- data.frame(
  
 testing.pars.high <- testing.pars.low
  
-# % prescribed NAIs, for those with vs without a +ve test / and for early vs late care-seekers
+# % prescribed NAIs for early vs late care-seekers
 prescribing.pars.low <- data.frame(
                         prescribe.level = paste0(c("low", "high"), " prescribing"),
                         # % prescribed NAIs, with +ve test
@@ -226,15 +204,15 @@ pars <- rbind(pars.low, pars.high)
 ```
 
 ```{r}
-out.baseline <- get_outcomes(pars) %>% 
+out.initial <- get_outcomes(pars) %>% 
                     mutate(scenario.all = scenario) %>%
                     separate(scenario.all, c("testing", "prescribing", "effectiveness"), ", ") 
 ```
 
 
-### Extreme scenarios vs baseline
+### Initial scenarios vs baseline
 
-Simulate the baseline scenarios above relative to a theoretical worst-case scenario in which antivirals are *not* used (can be modeled by setting NAI effectiveness to 0)
+Simulate the initial scenarios above relative to a theoretical baseline scenario in which antivirals ('NAIs') are *not* used (can be modeled by setting NAI effectiveness to 0)
 
 ```{r}
 pars.worst <- pars %>% filter(scenario == "high testing, high prescribing, high NAI effect") %>%
@@ -245,11 +223,11 @@ pars.worst <- pars %>% filter(scenario == "high testing, high prescribing, high 
 ```
 
 ```{r}
-# simulate extreme scenarios
-out.extreme <- get_outcomes(pars.worst) 
+# simulate baseline scenario
+out.baseline <- get_outcomes(pars.worst) 
 
 # join with output from baseline scenarios
-tmp.extreme <- bind_rows(out.baseline, out.extreme) %>% 
+tmp.baseline <- bind_rows(out.initial, out.baseline) %>% 
                     select(sim, risk, age, scenario, hosp.total) %>%
                     spread(risk, hosp.total) %>% mutate(all = high + low) %>%
                     gather(risk, hosp.total, high, low, all) %>% spread(age, hosp.total) %>%
@@ -257,9 +235,9 @@ tmp.extreme <- bind_rows(out.baseline, out.extreme) %>%
                     gather(age, hosp.total, `0-4`:all) %>%
                     spread(scenario, hosp.total) 
 
-# calculate changes relative to the extreme scenarios (absolute and percent)
-change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
-change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
+# calculate changes relative to the baseline scenario (absolute and percent)
+change.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x))) 
+change.perc.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 ```
 
 Total hospitalizations in the baseline scenario without antivirals
@@ -281,7 +259,7 @@ total_perc_averted <- change.perc.worst %>% filter(risk == "all", age == "all") 
     separate(scenario, c("testing", "prescribing", "effectiveness"), ", ") %>%
     do(., get_summary(., var = "change", groups = c("testing", "prescribing", "effectiveness")))
 
-nai.used <- out.baseline %>% group_by(sim, testing, prescribing, effectiveness) %>%
+nai.used <- out.initial %>% group_by(sim, testing, prescribing, effectiveness) %>%
     summarize(nai.total = sum(nai.total), .groups = "drop") 
 ```
 
@@ -412,7 +390,7 @@ tmp2 %>%
 dev.off()
 
 # NNT
-nai.used.age.risk0 <- out.baseline %>% 
+nai.used.age.risk0 <- out.initial %>% 
     select(sim, risk, age, scenario, nai.total) %>% 
     spread(risk, nai.total) %>% mutate(all = high + low) %>%
     gather(risk, nai.total, high, low, all) %>%
@@ -450,7 +428,7 @@ dev.off()
 
 ### Alternative scenarios: increased individual-level parameters
 
-Increase parameters that represent actions individuals could perform differently
+Increase parameters that represent 
 
 * Increased % seeking care
 * Increased % of care-seekers doing so within 2d
@@ -505,21 +483,21 @@ rename_pars(pars_long) %>%
 dev.off()
 ```
 
-Compare to worst-case scenario, assuming NAI effectiveness is at its highest value.
+Compare to baseline scenario, assuming NAI effectiveness is at its highest value.
 
 ```{r}
 n <- length(unique(pars.alt.cs$alternative))
 
-# join output with output for extreme scenarios
-tmp.extreme <- out.extreme %>% uncount(n) %>% 
-    mutate(alternative = rep(unique(pars.alt.cs$alternative), times = nrow(out.extreme))) %>%
+# join output with output for baseline scenarios
+tmp.baseline <- out.baseline %>% uncount(n) %>% 
+    mutate(alternative = rep(unique(pars.alt.cs$alternative), times = nrow(out.baseline))) %>%
     bind_rows(., out.alt.cs) %>% select(sim, risk, age, scenario, alternative, hosp.total) %>%
     spread(risk, hosp.total) %>% mutate(all = high + low) %>%
     gather(risk, hosp.total, high, low, all) %>% spread(scenario, hosp.total) 
 
-# calculate change relative to extreme scenarios
-change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
-change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
+# calculate change relative to baseline scenarios
+change.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x))) 
+change.perc.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 ```
 
 ```{r, fig.width = 10, fig.height = 8, results='hide'}
@@ -633,14 +611,14 @@ Compare to best and worst-case scenarios, assuming NAI effectiveness is at its h
 ```{r}
 n <- length(unique(pars.alt$alternative))
 
-tmp.extreme <- out.extreme %>% uncount(n) %>% 
-    mutate(alternative = rep(unique(pars.alt$alternative), times = nrow(out.extreme))) %>%
+tmp.baseline <- out.baseline %>% uncount(n) %>% 
+    mutate(alternative = rep(unique(pars.alt$alternative), times = nrow(out.baseline))) %>%
     bind_rows(., out.alt) %>% select(sim, risk, age, scenario, alternative, hosp.total) %>%
     spread(risk, hosp.total) %>% mutate(all = high + low) %>%
     gather(risk, hosp.total, high, low, all) %>% spread(scenario, hosp.total) 
 
-change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
-change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
+change.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x))) 
+change.perc.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 ```
 
 ```{r, fig.height = 8, fig.width = 10, results='hide'}
@@ -748,8 +726,8 @@ out.all <- get_outcomes(pars.all)
 
 n <- length(unique(pars.all$alternative))
 
-tmp.extreme <- out.extreme %>% uncount(n) %>% 
-    mutate(alternative = rep(unique(pars.all$alternative), times = nrow(out.extreme))) %>%
+tmp.baseline <- out.baseline %>% uncount(n) %>% 
+    mutate(alternative = rep(unique(pars.all$alternative), times = nrow(out.baseline))) %>%
     bind_rows(., out.all) %>% select(sim, risk, age, scenario, alternative, hosp.total) %>%
     spread(risk, hosp.total) %>% mutate(all = high + low) %>%
     gather(risk, hosp.total, high, low, all) %>% 
@@ -758,12 +736,12 @@ tmp.extreme <- out.extreme %>% uncount(n) %>%
     gather(age, hosp.total, `0-4`:all) %>%
     spread(scenario, hosp.total) 
 
-change.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x))) 
-change.perc.worst <- tmp.extreme %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
+change.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x))) 
+change.perc.worst <- tmp.baseline %>% mutate(across(contains("testing"), function(x) (worst - x) / worst * 100)) 
 ```
 
 ```{r, fig.height = 8, fig.width = 10, results='hide'}
-# Compare worst-case to baseline scenarios (absolute difference)
+# Compare absolute difference
 p_alt3_num <- 
     change.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
@@ -779,7 +757,7 @@ p_alt3_num <-
     scale_color_manual("Scenario", values = cols_alt[c(1, 5)]) + 
     labs(x = "Risk stratification", y = "Number of hospitalizations\naverted relative to baseline")
 
-# Compare worst-case to baseline scenarios (% difference)
+# Compare % difference
 p_alt3_perc <- change.perc.worst %>% filter(age != "all") %>%
     rename(change = "high testing, high prescribing, high NAI effect") %>%
     do(., get_summary(., var = "change", groups = c("risk", "age", "alternative"))) %>%
