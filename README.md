@@ -1,6 +1,12 @@
 ## Overview
 
-Working repository for the antiviral prescribing model.
+This repository contains code required to reproduce results from the following paper:
+
+SE Morris*, SM Mathis*, E Reeves, JR Chung, RK Borchering, NM Lewis, S Masalovich, S Garg, TM Uyeki, AD Iuliano, MW Tenforde, C Reed, M Biggerstaff. Modeling the potential impacts of outpatient antiviral treatment in reducing influenza-associated hospitalizations in the United States. Jouurnal of Infectious Diseases (accepted)
+
+*Contributed equally
+
+The findings and conclusions of this report are those of the authors and do not necessarily represent the official position of the Centers for Disease Control and Prevention.
 
 
 ### Quick-start guide
@@ -9,9 +15,12 @@ Model can be run by knitting the `run_model.Rmd` (with option to save figures in
 
 Functions are stored in `functions.R`. 
 
-Some inputs are derived from unpublished data and are therefore stored separately.
-
   
+### Additional information
+
+Questions can be directed to Sinead Morris (run7@cdc.gov) or Sarabeth Mathis (nqr2@cdc.gov).
+
+
 ## Public Domain Standard Notice
 
 This repository constitutes a work of the United States Government and is not
