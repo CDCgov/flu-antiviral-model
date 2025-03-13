@@ -156,21 +156,6 @@ get_outcomes <- function(parameters) {
 }
 
 
-#' Calculate percent of hospitalizations relative to some reference scenario ----
-#' 
-#' @param out 
-#' @param ref.col Character string specifying the name of the reference column
-#' @param ref.value Numerical value specifying the value of the reference column that represents the reference scenario
-#'
-#' @return
-#' @export
-#'
-#' @examples
-get_percent_burden <- function(out, ref.col = "increase", ref.value = 0) {
-    out[, hosp.percent := (hosp.total[get(ref.col) == ref.value] - hosp.total) /hosp.total[get(ref.col) == ref.value] * 100,
-          by = list(sim, age)]
-}
-
 
 #' Summarize (mean and 95th percentile) function -------------------------------
 #' 
@@ -260,23 +245,4 @@ rename_pars <- function(dat, reorder = TRUE) {
 
 
 
-#' Distinguish different kinds of scenarios for better plotting ---------------------------
-#' 
-#' @param dat data.frame or data.table of results to plot
-#'
-#' @return
-#' @export
-#'
-#' @examples
-distinguish_scenarios <- function(dat, reorder = TRUE) {
-    dat %>%
-        mutate(testing = case_when(str_detect(scenario, "high testing") ~ "high testing",
-                                   str_detect(scenario, "intermediate testing") ~ "intermediate testing",
-                                   str_detect(scenario, "low testing") ~ "low testing"),
-               prescribing = case_when(str_detect(scenario, "high prescribing") ~ "high prescribing",
-                                       str_detect(scenario, "low prescribing") ~ "low prescribing"),
-               effectiveness = case_when(str_detect(scenario, "high NAI effect") ~ "high",
-                                         str_detect(scenario, "intermediate NAI effect") ~ "intermediate",
-                                         str_detect(scenario, "low NAI effect") ~ "low")) 
-}
 
