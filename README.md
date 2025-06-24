@@ -4,7 +4,7 @@ This repository contains code required to reproduce results from the following p
 
 SE Morris\*, SM Mathis\*, E Reeves, JR Chung, RK Borchering, NM Lewis, S Masalovich, S Garg, TM Uyeki, AD Iuliano, MW Tenforde, C Reed, M Biggerstaff. *Modeling the potential impacts of outpatient antiviral treatment in reducing influenza-associated hospitalizations in the United States*. The Journal of Infectious Diseases; 2025. 
 
-PMID: 40219874; DOI: 10.1093/infdis/jiaf061
+PMID: [40219874](https://pubmed.ncbi.nlm.nih.gov/40219874/); DOI: [10.1093/infdis/jiaf061](https://academic.oup.com/jid/advance-article-abstract/doi/10.1093/infdis/jiaf061/8112688).
 
 *Contributed equally
 
