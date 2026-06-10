@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use this software or model, please cite the associated paper as below."
+authors:
+  - family-names: "Morris"
+    given-names: "Sinead E."
+  - family-names: "Mathis"
+    given-names: "Sarabeth M."
+title: "flu-antiviral-model"
+version: "1.0.0"
+date-released: "2025-10-15"
+url: "https://github.com/CDCgov/flu-antiviral-model"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Morris"
+      given-names: "Sinead E."
+    - family-names: "Mathis"
+      given-names: "Sarabeth M."
+    - family-names: "Reeves"
+      given-names: "Emily L."
+    - family-names: "Chung"
+      given-names: "Jessie R."
+    - family-names: "Borchering"
+      given-names: "Rebecca K."
+    - family-names: "Lewis"
+      given-names: "Nathaniel M."
+    - family-names: "Masalovich"
+      given-names: "Svetlana"
+    - family-names: "Garg"
+      given-names: "Shikha"
+    - family-names: "Uyeki"
+      given-names: "Timothy M."
+    - family-names: "Iuliano"
+      given-names: "A. Danielle"
+    - family-names: "Tenforde"
+      given-names: "Mark W."
+    - family-names: "Reed"
+      given-names: "Carrie"
+    - family-names: "Biggerstaff"
+      given-names: "Matthew"
+  title: "Modeling the Potential Impacts of Outpatient Antiviral Treatment in Reducing Influenza-Associated Hospitalizations in the United States"
+  journal: "The Journal of Infectious Diseases"
+  volume: 232
+  issue: 4
+  start: 923
+  end: 932
+  date-published: "2025-10-15"
+  doi: "10.1093/infdis/jiaf061"
+  url: "https://academic.oup.com/jid/article/232/4/923/8112688"
